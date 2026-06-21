@@ -1,0 +1,60 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { AuthLayout } from "@/components/layout/AuthLayout";
+import { LoginPage } from "@/pages/auth/LoginPage";
+import { RegisterPage } from "@/pages/auth/RegisterPage";
+import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
+import { DashboardPage } from "@/pages/DashboardPage";
+import { PlaceholderPage } from "@/pages/PlaceholderPage";
+import { NotFoundPage } from "@/pages/NotFoundPage";
+
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route element={<AuthLayout />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+      </Route>
+
+      <Route element={<AppLayout />}>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route
+          path="/products"
+          element={<PlaceholderPage title="المنتجات" phase="المرحلة 6" />}
+        />
+        <Route
+          path="/orders"
+          element={<PlaceholderPage title="الطلبات" phase="المرحلة 7" />}
+        />
+        <Route
+          path="/customers"
+          element={<PlaceholderPage title="العملاء" phase="المرحلة 8" />}
+        />
+        <Route
+          path="/team"
+          element={
+            <PlaceholderPage title="الموظفين والصلاحيات" phase="المرحلة 3" />
+          }
+        />
+        <Route
+          path="/automations"
+          element={<PlaceholderPage title="الأتمتة" phase="المرحلة 10" />}
+        />
+        <Route
+          path="/notifications"
+          element={<PlaceholderPage title="الإشعارات" phase="المرحلة 11" />}
+        />
+        <Route
+          path="/settings"
+          element={<PlaceholderPage title="الإعدادات" phase="المرحلة 12" />}
+        />
+      </Route>
+
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+}
