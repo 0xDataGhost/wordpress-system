@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { asyncHandler } from "../../lib/async-handler";
 import { authenticate } from "../../middleware/authenticate";
+import { requirePermission } from "../../middleware/authorize";
 import { validate } from "../../middleware/validate";
+import { generateApiKey } from "../connections/connections.controller";
 import { createStore, getCurrentStore } from "./stores.controller";
 import { createStoreSchema } from "./stores.schemas";
 
@@ -17,5 +19,13 @@ router.post(
 
 // GET /stores/current   — the store the current token is scoped to
 router.get("/current", authenticate, asyncHandler(getCurrentStore));
+
+// POST /stores/current/api-key — issue a new WordPress connector API key
+router.post(
+  "/current/api-key",
+  authenticate,
+  requirePermission("settings.edit"),
+  asyncHandler(generateApiKey),
+);
 
 export default router;

@@ -11,6 +11,12 @@ declare global {
         storeId: string;
         permissionKeys?: Set<string>;
       };
+      // Tenant context resolved from a WordPress connector API key by the
+      // `authenticateConnector` middleware (distinct from JWT-based `auth`).
+      connector?: {
+        storeId: string;
+        connectionId: string;
+      };
     }
   }
 }

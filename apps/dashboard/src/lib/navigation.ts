@@ -6,6 +6,7 @@ import {
   ShieldCheck,
   Workflow,
   Bell,
+  Plug,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -30,5 +31,6 @@ export const navItems: NavItem[] = [
   { label: "الموظفين والصلاحيات", to: "/team", icon: ShieldCheck },
   { label: "الأتمتة", to: "/automations", icon: Workflow },
   { label: "الإشعارات", to: "/notifications", icon: Bell },
+  { label: "ربط المتجر", to: "/connection", icon: Plug },
   { label: "الإعدادات", to: "/settings", icon: Settings },
 ];

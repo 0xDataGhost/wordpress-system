@@ -4,6 +4,7 @@ import { env } from "../config/env";
 import authRoutes from "../modules/auth/auth.routes";
 import roleRoutes from "../modules/roles/roles.routes";
 import storeRoutes from "../modules/stores/stores.routes";
+import wpRoutes from "../modules/connections/wp.routes";
 
 /**
  * Root API router, mounted under env.API_PREFIX (default /api/v1).
@@ -23,5 +24,6 @@ router.get("/", (_req, res) => {
 router.use("/auth", authRoutes);
 router.use("/stores", storeRoutes);
 router.use("/roles", roleRoutes);
+router.use("/wp", wpRoutes);
 
 export default router;

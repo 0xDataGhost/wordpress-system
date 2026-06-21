@@ -6,6 +6,7 @@ import { RegisterPage } from "@/pages/auth/RegisterPage";
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
 import { DashboardPage } from "@/pages/DashboardPage";
+import { ConnectionPage } from "@/pages/ConnectionPage";
 import { PlaceholderPage } from "@/pages/PlaceholderPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -47,6 +48,7 @@ export function AppRoutes() {
           path="/notifications"
           element={<PlaceholderPage title="الإشعارات" phase="المرحلة 11" />}
         />
+        <Route path="/connection" element={<ConnectionPage />} />
         <Route
           path="/settings"
           element={<PlaceholderPage title="الإعدادات" phase="المرحلة 12" />}
