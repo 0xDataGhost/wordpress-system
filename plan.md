@@ -117,7 +117,51 @@ Do not build these in MVP:
 
 ---
 
-# Phase 0 — Repository & Project Setup
+# Implementation Status (as of 2026-06-22)
+
+> This snapshot reflects the actual approved implementation and is the source of truth for what is built versus pending. Phase ordering was revised: the **Products Module now ships before WooCommerce Sync**.
+
+## Status Legend
+
+- ✅ COMPLETED — implemented and verified
+- 🟡 PARTIAL — foundation in place, some sub-features still pending
+- ⏭️ NEXT — the next phase to implement
+- ⏳ PENDING — not started
+
+## Phase Status
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 0 | Repository & Project Setup | ✅ COMPLETED |
+| 1 | Frontend Foundation | ✅ COMPLETED |
+| 2 | Backend Foundation | ✅ COMPLETED |
+| 3 | Auth, Tenants, Roles & Permissions | ✅ COMPLETED |
+| 4 | WordPress Connector Plugin Foundation | ✅ COMPLETED |
+| 4.5 | Dashboard Auth Integration & API Client | ✅ COMPLETED |
+| 5 | Products Module | ✅ COMPLETED |
+| 5.1 | Products Module Foundation | ✅ COMPLETED |
+| 5.2 | Hardening: Real Connection Backend + Auth Rate Limiting | ✅ COMPLETED |
+| 6 | WooCommerce Sync Foundation | ⏭️ NEXT |
+| 7 | Orders Module | ⏳ PENDING |
+| 8 | Customers Module | ⏳ PENDING |
+| 9 | Dashboard Analytics | ⏳ PENDING |
+| 10 | Notifications Center | ⏳ PENDING |
+| 11 | Automations MVP | ⏳ PENDING |
+| 12 | Settings Module | ⏳ PENDING |
+| 12.5 | AI Assistants | ⏳ PENDING |
+| 13 | Webhooks & Incremental Sync | ⏳ PENDING |
+| 13.5 | Audit Logs | ⏳ PENDING |
+| 14 | QA, Permissions & Production Readiness | ⏳ PENDING |
+
+## Known Deferrals Within Completed Phases
+
+- Product publish to WooCommerce currently returns a validated payload preview (HTTP 202, `dispatched: false`); actual delivery to WooCommerce is deferred to Phase 6.
+- CSV/Excel import and product image upload are not yet implemented (planned within the Products Module track). AI product description is deferred to Phase 12.5 (AI Assistants).
+- The live connect/verify handshake against a production WordPress + WooCommerce store will be exercised in Phase 6.
+
+---
+
+# Phase 0 — Repository & Project Setup ✅ COMPLETED
 
 ## Goal
 
@@ -162,7 +206,7 @@ project-root/
 
 ---
 
-# Phase 1 — Frontend Foundation
+# Phase 1 — Frontend Foundation ✅ COMPLETED
 
 ## Goal
 
@@ -230,7 +274,7 @@ Use Arabic labels:
 
 ---
 
-# Phase 2 — Backend Foundation
+# Phase 2 — Backend Foundation ✅ COMPLETED
 
 ## Goal
 
@@ -287,7 +331,7 @@ Error shape:
 
 ---
 
-# Phase 3 — Auth, Tenants, Roles & Permissions
+# Phase 3 — Auth, Tenants, Roles & Permissions ✅ COMPLETED
 
 ## Goal
 
@@ -398,7 +442,7 @@ DELETE /team/:id
 
 ---
 
-# Phase 4 — WordPress Connector Plugin Foundation
+# Phase 4 — WordPress Connector Plugin Foundation ✅ COMPLETED
 
 ## Goal
 
@@ -467,16 +511,130 @@ GET  /stores/:id/connection-status
 
 ---
 
-# Phase 5 — WooCommerce Sync: Products, Orders, Customers
+# Phase 4.5 — Dashboard Auth Integration & API Client ✅ COMPLETED
 
 ## Goal
 
-Sync WooCommerce data into the SaaS database.
+Connect the React dashboard to the real backend auth system from Phase 3, replacing UI-only auth with live API calls, token persistence, and protected routing. This was the glue that made the dashboard real instead of mocked.
+
+## Implemented
+
+- Shared HTTP client (`apiRequest`) that unwraps the success/error envelope.
+- Automatic 401 handling: deduped refresh-token call, retry-once, then forced logout.
+- Access/refresh token persistence in localStorage (`saas.accessToken`, `saas.refreshToken`).
+- `AuthProvider` context and `ProtectedRoute` guard.
+- Login and Register pages wired to the real backend.
+- Topbar wired to the authenticated user and logout.
+
+## Backend Touchpoints
+
+```txt
+POST /auth/login
+POST /auth/register
+POST /auth/refresh
+GET  /auth/me
+```
+
+## Acceptance Criteria
+
+- Login and register work against the real backend.
+- Tokens persist across page reloads.
+- Expired access tokens are refreshed transparently.
+- Protected routes redirect unauthenticated users.
+
+---
+
+# Phase 5 — Products Module ✅ COMPLETED
+
+## Goal
+
+Allow store users to view, create, edit, archive, and publish products from the SaaS dashboard. Implemented **before** WooCommerce Sync so the dashboard has a working product surface and a publish foundation ahead of bulk import.
+
+This phase shipped in two parts: **5.1 (foundation)** and **5.2 (hardening)**.
+
+## Frontend Pages
+
+```txt
+/products
+/products/new
+/products/:id
+/products/:id/edit
+```
+
+## Backend Endpoints
+
+```txt
+GET    /products             ✅ list (search / filter / pagination)
+GET    /products/:id         ✅ details
+POST   /products             ✅ create
+PATCH  /products/:id         ✅ update
+DELETE /products/:id         ✅ archive (soft delete)
+POST   /products/:id/publish 🟡 publish foundation (payload preview, delivery deferred to Phase 6)
+POST   /wp/products/sync     ✅ connector-authenticated upsert from WordPress
+```
+
+---
+
+## Phase 5.1 — Products Module Foundation ✅ COMPLETED
+
+### Implemented
+
+- Drizzle `products` schema + migration (0002), store-scoped.
+- Products module: service, controller, routes, Zod schemas, serializer (with unit tests).
+- Full CRUD with RBAC permissions (`products.view` / `create` / `edit` / `delete`).
+- Soft-delete (archive) instead of hard delete.
+- Dashboard pages: list (search/filter/pagination), create, details, edit, and a shared `ProductForm`.
+- `products-api.ts` client wired through `apiRequest`.
+- WordPress plugin product class (`class-saas-connector-products.php`) for create/sync hooks.
+- Publish foundation: validates and returns the WooCommerce payload preview (HTTP 202, `dispatched: false`). Actual delivery to WooCommerce is deferred to Phase 6.
+
+### Pending
+
+- CSV/Excel import (`POST /products/import`) — planned within the Products track.
+- Product image upload — planned within the Products track.
+- Real publish delivery to WooCommerce + returned WooCommerce product ID — lands in Phase 6.
+- AI product description (`POST /products/ai-description`) — **deferred to Phase 12.5 (AI Assistants)**; intentionally kept out of the immediate Phase 6/7/8 path.
+
+### BullMQ Jobs (planned)
+
+```txt
+publish_product_to_wp
+import_products
+```
+
+---
+
+## Phase 5.2 — Hardening: Real Connection Backend + Auth Rate Limiting ✅ COMPLETED
+
+### Implemented
+
+- Connection UI wired to the real backend (simulation removed):
+  - `GET /wp/connection-status` (JWT) — status shown in the dashboard.
+  - `POST /stores/current/api-key` (JWT) — generate / reveal one-time API key.
+  - `POST /stores/current/disconnect` (JWT) — new disconnect endpoint.
+- Connect/verify remain connector-key authenticated (driven by the WordPress plugin).
+- Auth rate limiting (Redis fixed-window, fail-open) on `POST /auth/login`, `/auth/register`, and `/auth/refresh`, returning `RATE_LIMITED` (429) with `Retry-After`.
+- Rate-limit window / max / enabled configurable via env (`AUTH_RATE_LIMIT_*`).
+
+### Acceptance Criteria
+
+- Connection status loads from the real backend and persists after refresh. ✅
+- Generated API key is stored in the database (verified) and shown once in the UI. ✅
+- Disconnect updates the connection status. ✅
+- Exceeding the auth limit returns 429 `RATE_LIMITED`; valid logins still succeed. ✅
+
+---
+
+# Phase 6 — WooCommerce Sync Foundation ⏭️ NEXT
+
+## Goal
+
+Sync WooCommerce data (products, orders, customers) into the SaaS database. This is the **next phase** to implement. It also delivers the real product publish path deferred from Phase 5.
 
 ## Database Tables
 
 ```txt
-products
+products            (extend existing schema)
 product_images
 orders
 order_items
@@ -484,23 +642,6 @@ customers
 external_mappings
 sync_jobs
 webhook_events
-```
-
-## Product Fields
-
-```txt
-id
-store_id
-wp_product_id
-name
-description
-short_description
-price
-stock_quantity
-status
-image_url
-created_at
-updated_at
 ```
 
 ## Order Fields
@@ -535,6 +676,37 @@ created_at
 updated_at
 ```
 
+## External Mappings
+
+Use one generic mapping table instead of separate mapping tables for products, orders, and customers.
+
+Fields:
+
+```txt
+id
+store_id
+entity_type
+local_id
+external_id
+source
+created_at
+updated_at
+```
+
+Supported `entity_type`:
+
+```txt
+product
+order
+customer
+```
+
+Supported `source`:
+
+```txt
+woocommerce
+```
+
 ## Backend Endpoints
 
 ```txt
@@ -553,6 +725,7 @@ GET  /sync/status
 - Send data to SaaS API.
 - Save last sync time.
 - Add manual sync button.
+- Deliver dashboard-created products to WooCommerce (completes the Phase 5 publish foundation).
 
 ## BullMQ Jobs
 
@@ -561,6 +734,7 @@ sync_products
 sync_orders
 sync_customers
 sync_all
+publish_product_to_wp
 ```
 
 ## Acceptance Criteria
@@ -571,95 +745,11 @@ sync_all
 - Customers appear in SaaS dashboard.
 - Repeated sync does not create duplicates.
 - Data is scoped by store_id.
+- Dashboard-published products are created in WooCommerce and return a WooCommerce product ID.
 
 ---
 
-# Phase 6 — Products Module
-
-## Goal
-
-Allow store users to view, create, edit, import, and publish products from the SaaS dashboard.
-
-## Frontend Pages
-
-```txt
-/products
-/products/new
-/products/:id
-/products/import
-```
-
-## Features
-
-- Product list
-- Search
-- Filters
-- Product details
-- Add product
-- Edit product
-- Save as draft
-- Publish to WooCommerce
-- Upload product image
-- Import products from CSV/Excel
-- Generate description using AI
-
-## Backend Endpoints
-
-```txt
-GET    /products
-GET    /products/:id
-POST   /products
-PATCH  /products/:id
-DELETE /products/:id
-POST   /products/:id/publish
-POST   /products/import
-POST   /products/ai-description
-```
-
-## AI Description Input
-
-```txt
-product_name
-category
-short_notes
-tone
-```
-
-## AI Description Output
-
-```txt
-description
-short_description
-```
-
-## WordPress Plugin Tasks
-
-- Create product in WooCommerce.
-- Update product in WooCommerce.
-- Upload image if supported.
-- Return WooCommerce product ID.
-
-## BullMQ Jobs
-
-```txt
-publish_product_to_wp
-generate_ai_description
-import_products
-```
-
-## Acceptance Criteria
-
-- User can view products.
-- User can create product draft.
-- User can publish product to WooCommerce.
-- Product gets WooCommerce ID after publishing.
-- User can edit product.
-- AI generates description and short description.
-- CSV/Excel import creates product drafts.
-
----
-
-# Phase 7 — Orders Module
+# Phase 7 — Orders Module ⏳ PENDING
 
 ## Goal
 
@@ -702,7 +792,7 @@ PATCH /orders/:id/notes
 
 ---
 
-# Phase 8 — Customers Module
+# Phase 8 — Customers Module ⏳ PENDING
 
 ## Goal
 
@@ -748,7 +838,7 @@ GET /customers/:id/orders
 
 ---
 
-# Phase 9 — Dashboard Analytics
+# Phase 9 — Dashboard Analytics ⏳ PENDING
 
 ## Goal
 
@@ -804,11 +894,57 @@ GET /dashboard/low-stock
 
 ---
 
-# Phase 10 — Automations MVP
+# Phase 10 — Notifications Center ⏳ PENDING
 
 ## Goal
 
-Build the first 3 automations only.
+Create a central place for system notifications. Built **before** Automations because automations (low stock alerts, daily reports, failed-automation messages) depend on the notifications system.
+
+## Frontend Page
+
+```txt
+/notifications
+```
+
+## Database Tables
+
+```txt
+notifications
+```
+
+## Notification Types
+
+```txt
+new_order
+low_stock
+failed_sync
+failed_automation
+daily_report
+```
+
+## Backend Endpoints
+
+```txt
+GET   /notifications
+PATCH /notifications/:id/read
+POST  /notifications/read-all
+```
+
+## Acceptance Criteria
+
+- Notifications appear in dashboard.
+- Notifications page works.
+- User can mark notification as read.
+- User can mark all as read.
+- Notifications are store-scoped.
+
+---
+
+# Phase 11 — Automations MVP ⏳ PENDING
+
+## Goal
+
+Build the first 3 automations only. Depends on the Notifications Center (Phase 10) for low stock alerts, daily reports, and failed-automation messages.
 
 ## Automations
 
@@ -857,7 +993,6 @@ enabled
 ```txt
 automations
 automation_logs
-notifications
 ```
 
 ## Backend Endpoints
@@ -896,47 +1031,7 @@ send_whatsapp_order_message
 
 ---
 
-# Phase 11 — Notifications Center
-
-## Goal
-
-Create a central place for system notifications.
-
-## Frontend Page
-
-```txt
-/notifications
-```
-
-## Notification Types
-
-```txt
-new_order
-low_stock
-failed_sync
-failed_automation
-daily_report
-```
-
-## Backend Endpoints
-
-```txt
-GET   /notifications
-PATCH /notifications/:id/read
-POST  /notifications/read-all
-```
-
-## Acceptance Criteria
-
-- Notifications appear in dashboard.
-- Notifications page works.
-- User can mark notification as read.
-- User can mark all as read.
-- Notifications are store-scoped.
-
----
-
-# Phase 12 — Settings Module
+# Phase 12 — Settings Module ⏳ PENDING
 
 ## Goal
 
@@ -982,7 +1077,54 @@ PATCH /settings/integrations/whatsapp
 
 ---
 
-# Phase 13 — Webhooks & Incremental Sync
+# Phase 12.5 — AI Assistants ⏳ PENDING
+
+## Goal
+
+Add AI-assisted features to the dashboard, starting with AI product description generation. Deferred out of the early Products track so core CRUD and sync land first.
+
+## Features
+
+- AI product description generation.
+
+## Backend Endpoints
+
+```txt
+POST /products/ai-description
+```
+
+## AI Description Input
+
+```txt
+product_name
+category
+short_notes
+tone
+```
+
+## AI Description Output
+
+```txt
+description
+short_description
+```
+
+## BullMQ Jobs
+
+```txt
+generate_ai_description
+```
+
+## Acceptance Criteria
+
+- AI generates a description and a short description.
+- Generated content can be reviewed/edited before saving.
+- AI calls are store-scoped and respect permissions.
+- Failures are handled gracefully without blocking manual product editing.
+
+---
+
+# Phase 13 — Webhooks & Incremental Sync ⏳ PENDING
 
 ## Goal
 
@@ -1024,7 +1166,52 @@ POST /wp/webhooks/customers
 
 ---
 
-# Phase 14 — QA, Permissions & Production Readiness
+# Phase 13.5 — Audit Logs ⏳ PENDING
+
+## Goal
+
+Track important admin and system events for accountability and debugging, before the final QA pass.
+
+## Database Table
+
+```txt
+audit_logs
+```
+
+## Tracked Events
+
+```txt
+login
+logout
+product created
+product updated
+product archived
+role changes
+team changes
+store connection changes
+sync started
+sync completed
+sync failed
+automation enabled
+automation disabled
+```
+
+## Backend Endpoints
+
+```txt
+GET /audit-logs
+```
+
+## Acceptance Criteria
+
+- Audit logs are store-scoped.
+- Sensitive data is not logged.
+- Important admin actions are tracked.
+- Logs can be filtered by user, action, and date.
+
+---
+
+# Phase 14 — QA, Permissions & Production Readiness ⏳ PENDING
 
 ## Goal
 
@@ -1139,22 +1326,29 @@ Notes / Remaining:
 # Recommended Build Order
 
 ```txt
-Phase 0  — Repository & Project Setup
-Phase 1  — Frontend Foundation
-Phase 2  — Backend Foundation
-Phase 3  — Auth, Tenants, Roles & Permissions
-Phase 4  — WordPress Connector Plugin Foundation
-Phase 5  — WooCommerce Sync
-Phase 6  — Products Module
-Phase 7  — Orders Module
-Phase 8  — Customers Module
-Phase 9  — Dashboard Analytics
-Phase 10 — Automations MVP
-Phase 11 — Notifications Center
-Phase 12 — Settings Module
-Phase 13 — Webhooks & Incremental Sync
-Phase 14 — QA, Permissions & Production Readiness
+Phase 0   — Repository & Project Setup                ✅ COMPLETED
+Phase 1   — Frontend Foundation                       ✅ COMPLETED
+Phase 2   — Backend Foundation                        ✅ COMPLETED
+Phase 3   — Auth, Tenants, Roles & Permissions        ✅ COMPLETED
+Phase 4   — WordPress Connector Plugin Foundation     ✅ COMPLETED
+Phase 4.5 — Dashboard Auth Integration & API Client   ✅ COMPLETED
+Phase 5   — Products Module                           ✅ COMPLETED
+Phase 5.1 — Products Module Foundation                ✅ COMPLETED
+Phase 5.2 — Hardening (Connection backend + rate limit) ✅ COMPLETED
+Phase 6   — WooCommerce Sync Foundation               ⏭️ NEXT
+Phase 7   — Orders Module                             ⏳ PENDING
+Phase 8   — Customers Module                          ⏳ PENDING
+Phase 9   — Dashboard Analytics                       ⏳ PENDING
+Phase 10  — Notifications Center                      ⏳ PENDING
+Phase 11  — Automations MVP                           ⏳ PENDING
+Phase 12  — Settings Module                           ⏳ PENDING
+Phase 12.5— AI Assistants                             ⏳ PENDING
+Phase 13  — Webhooks & Incremental Sync               ⏳ PENDING
+Phase 13.5— Audit Logs                                ⏳ PENDING
+Phase 14  — QA, Permissions & Production Readiness    ⏳ PENDING
 ```
+
+> Note: Products Module (Phase 5) was intentionally built before WooCommerce Sync (Phase 6) so the dashboard had a working product surface and publish foundation first.
 
 ---
 
@@ -1170,6 +1364,7 @@ The MVP is successful when a store owner can:
 6. Add/edit/publish products from the SaaS dashboard.
 7. View orders and customers.
 8. Invite employees and assign roles.
-9. Enable basic automations.
-10. Use the system in Arabic RTL with light/dark mode.
+9. Receive system notifications for orders, low stock, and failed syncs.
+10. Enable basic automations.
+11. Use the system in Arabic RTL with light/dark mode.
 
