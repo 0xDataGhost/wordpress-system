@@ -30,6 +30,10 @@ interface AuthContextValue {
   status: AuthStatus;
   user: AuthUser | null;
   store: AuthStore | null;
+  /** Permission keys granted to the user in the active store (e.g. "orders.edit"). */
+  permissions: string[];
+  /** True when the user holds the given permission key in the active store. */
+  hasPermission: (key: string) => boolean;
   signIn: (input: LoginInput) => Promise<void>;
   signUp: (input: RegisterInput) => Promise<void>;
   signOut: () => Promise<void>;
@@ -42,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [store, setStore] = useState<AuthStore | null>(null);
+  const [permissions, setPermissions] = useState<string[]>([]);
 
   // Hydrate the session from a stored token so a refresh keeps the user in.
   useEffect(() => {
@@ -57,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!active) return;
         setUser(me.user);
         setStore(me.store);
+        setPermissions(me.permissions);
         setStatus("authenticated");
       })
       .catch(() => {
@@ -64,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearTokens();
         setUser(null);
         setStore(null);
+        setPermissions([]);
         setStatus("unauthenticated");
       });
 
@@ -77,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     function handleForcedLogout() {
       setUser(null);
       setStore(null);
+      setPermissions([]);
       setStatus("unauthenticated");
       navigate("/login", { replace: true });
     }
@@ -85,6 +93,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () =>
       window.removeEventListener(AUTH_LOGOUT_EVENT, handleForcedLogout);
   }, [navigate]);
+
+  // The login/register response carries the user + store but not the permission
+  // set, so we load it from /auth/me right after authenticating. A failure here
+  // only leaves the UI permission-gates closed — the backend still enforces.
+  async function loadPermissions(): Promise<void> {
+    try {
+      const me = await fetchMe();
+      setPermissions(me.permissions);
+    } catch {
+      setPermissions([]);
+    }
+  }
 
   async function signIn(input: LoginInput): Promise<void> {
     const session = await loginRequest(input);
@@ -95,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(session.user);
     setStore(session.store);
     setStatus("authenticated");
+    await loadPermissions();
   }
 
   async function signUp(input: RegisterInput): Promise<void> {
@@ -106,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(session.user);
     setStore(session.store);
     setStatus("authenticated");
+    await loadPermissions();
   }
 
   async function signOut(): Promise<void> {
@@ -116,13 +138,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearTokens();
     setUser(null);
     setStore(null);
+    setPermissions([]);
     setStatus("unauthenticated");
     navigate("/login", { replace: true });
   }
 
+  function hasPermission(key: string): boolean {
+    return permissions.includes(key);
+  }
+
   return (
     <AuthContext.Provider
-      value={{ status, user, store, signIn, signUp, signOut }}
+      value={{
+        status,
+        user,
+        store,
+        permissions,
+        hasPermission,
+        signIn,
+        signUp,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>

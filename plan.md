@@ -117,7 +117,7 @@ Do not build these in MVP:
 
 ---
 
-# Implementation Status (as of 2026-06-22)
+# Implementation Status (as of 2026-06-23)
 
 > This snapshot reflects the actual approved implementation and is the source of truth for what is built versus pending. Phase ordering was revised: the **Products Module now ships before WooCommerce Sync**.
 
@@ -142,8 +142,8 @@ Do not build these in MVP:
 | 5.1 | Products Module Foundation | ✅ COMPLETED |
 | 5.2 | Hardening: Real Connection Backend + Auth Rate Limiting | ✅ COMPLETED |
 | 6 | WooCommerce Sync Foundation | ✅ COMPLETED |
-| 7 | Orders Module | ⏭️ NEXT |
-| 8 | Customers Module | ⏳ PENDING |
+| 7 | Orders Module | ✅ COMPLETED |
+| 8 | Customers Module | ⏭️ NEXT |
 | 9 | Dashboard Analytics | ⏳ PENDING |
 | 10 | Notifications Center | ⏳ PENDING |
 | 11 | Automations MVP | ⏳ PENDING |
@@ -760,7 +760,16 @@ publish_product_to_wp
 
 ---
 
-# Phase 7 — Orders Module ⏳ PENDING
+# Phase 7 — Orders Module ✅ COMPLETED
+
+## Implementation Notes (completed)
+
+- **DB (migration 0004):** added `internal_notes` (dashboard-only operator notes, never written by sync) to the existing `orders` table. Added a canonical `ORDER_STATUSES` list (`pending`, `processing`, `on-hold`, `completed`, `cancelled`, `refunded`, `failed`) used for the status filter; the `status` column itself stays free text to tolerate any Woo value.
+- **Backend orders module** (`/orders`, `/orders/:id`, `/orders/:id/notes`): JWT-protected, tenant-scoped by `storeId`, Zod-validated, mirroring the Products module shape (schemas / serializer / service / controller / routes). List supports search (order number + linked customer name/email/phone via a LEFT JOIN), status filter, inclusive date-range filter on `coalesce(placed_at, created_at)`, and pagination. Details returns the order, its line items, and a customer summary (null for guest orders). Notes update normalizes empty/whitespace to `null`.
+- **Permissions:** `orders.view` for list/details, `orders.edit` for the notes update — enforced by `requirePermission`. Read-only path is read-only.
+- **Frontend (Arabic RTL):** `/orders` list (search, status filter, date-from/date-to, table with order number / customer / status badge / total / payment method / created date, loading/empty/error states, pagination) and `/orders/:id` details (order summary, customer info, items table, status badge, internal-notes editor + save, back button). The notes editor is gated by `orders.edit` (read-only without it). The dashboard `AuthProvider` now exposes `permissions` + `hasPermission()` for UI gating.
+- **Read-only integration with Phase 6:** the module only reads the orders/order_items/customers rows that sync produces; Phase 6 sync behavior was not modified.
+- **Not in this phase (out of scope):** no order creation from the dashboard, no customers UI (Phase 8), no analytics (Phase 9), no notifications/automations/webhooks/WhatsApp/shipping/AI.
 
 ## Goal
 
@@ -1347,8 +1356,8 @@ Phase 5   — Products Module                           ✅ COMPLETED
 Phase 5.1 — Products Module Foundation                ✅ COMPLETED
 Phase 5.2 — Hardening (Connection backend + rate limit) ✅ COMPLETED
 Phase 6   — WooCommerce Sync Foundation               ✅ COMPLETED
-Phase 7   — Orders Module                             ⏭️ NEXT
-Phase 8   — Customers Module                          ⏳ PENDING
+Phase 7   — Orders Module                             ✅ COMPLETED
+Phase 8   — Customers Module                          ⏭️ NEXT
 Phase 9   — Dashboard Analytics                       ⏳ PENDING
 Phase 10  — Notifications Center                      ⏳ PENDING
 Phase 11  — Automations MVP                           ⏳ PENDING

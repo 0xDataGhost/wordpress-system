@@ -12,11 +12,30 @@ import { stores } from "./stores";
 import { customers } from "./customers";
 
 /**
+ * Canonical WooCommerce order statuses. The `status` column itself is free text
+ * (the connector writes whatever Woo reports), but this list is the source of
+ * truth for the dashboard's status filter and status labels.
+ */
+export const ORDER_STATUSES = [
+  "pending",
+  "processing",
+  "on-hold",
+  "completed",
+  "cancelled",
+  "refunded",
+  "failed",
+] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+/**
  * WooCommerce orders synced into a single store (tenant). Every row carries a
  * `store_id` and all queries must scope by it. `wp_order_id` is the upsert key
  * within a store; `customer_id` links to the local customer row when the buyer
  * could be resolved (guest checkouts leave it null). Money is stored as exact
  * decimal and the original Woo timestamps are preserved in placed_at.
+ *
+ * `internal_notes` is dashboard-owned (never written by sync) so operators can
+ * annotate an order without touching WooCommerce.
  */
 export const orders = pgTable(
   "orders",
@@ -40,6 +59,8 @@ export const orders = pgTable(
     total: numeric("total", { precision: 12, scale: 2 }).notNull().default("0"),
     currency: text("currency").notNull().default("SAR"),
     paymentMethod: text("payment_method"),
+    // Dashboard-only operator notes. Never written by WooCommerce sync.
+    internalNotes: text("internal_notes"),
     // When the order was placed in WooCommerce (distinct from our created_at).
     placedAt: timestamp("placed_at", { withTimezone: true }),
     // Last successful sync with WooCommerce, for bookkeeping.
