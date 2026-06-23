@@ -148,8 +148,8 @@ Do not build these in MVP:
 | 10 | Notifications Center | ✅ COMPLETED |
 | 11 | Automations MVP | ✅ COMPLETED |
 | 12 | Settings Module | ✅ COMPLETED |
-| 12.5 | AI Assistants | ⏭️ NEXT |
-| 13 | Webhooks & Incremental Sync | ⏳ PENDING |
+| 12.5 | AI Assistants | ✅ COMPLETED |
+| 13 | Webhooks & Incremental Sync | ⏭️ NEXT |
 | 13.5 | Audit Logs | ⏳ PENDING |
 | 14 | QA, Permissions & Production Readiness | ⏳ PENDING |
 
@@ -1153,7 +1153,19 @@ PATCH /settings/integrations/whatsapp
 
 ---
 
-# Phase 12.5 — AI Assistants ⏳ PENDING
+# Phase 12.5 — AI Assistants ✅ COMPLETED
+
+## Implementation Notes (completed)
+
+> Scope was expanded (per the approved Phase 12.5 brief) into a dedicated, stateless `ai` module with **three** assistants and a swappable provider layer — superseding the original single `POST /products/ai-description` sketch.
+
+- **Stateless module — no DB changes:** the AI module performs **no writes** (honors "do not store prompts / chat history"). It reads existing data read-only for context and returns suggestions only. No migration, no schema, no tables.
+- **Backend `ai` module** (`POST /ai/product-description`, `POST /ai/sales-summary`, `POST /ai/low-stock-insights`): JWT-protected, tenant-scoped by `storeId`, Zod-validated, mirroring the established module shape (schemas / service / controller / routes + unit tests). Assistant #1 (product description) uses only user input → validated JSON `{ title, short_description, long_description, seo_description }`. Assistant #2 (sales summary) narrates **real tenant-scoped metrics** (revenue/orders/new-customers/top-products for a date range, reusing the dashboard read-queries) in Arabic. Assistant #3 (low-stock insights) gives Arabic restocking recommendations from the store's low-stock products.
+- **Provider abstraction (swappable):** an `AIProvider` interface with `OpenAIProvider` (fetch-based Chat Completions, `temperature 0`, timeout-guarded, JSON mode for product copy) and a deterministic `MockAIProvider`. A factory (`getAIProvider`) selects OpenAI when `OPENAI_API_KEY` is set, otherwise the mock — so the assistants work end-to-end offline. Swapping providers is a one-line change. New env: `OPENAI_API_KEY` (optional), `OPENAI_MODEL`, `OPENAI_BASE_URL`, `AI_REQUEST_TIMEOUT_MS`.
+- **Mock provider (active in this environment — no API key):** produces deterministic, template-based Arabic output from the request context. Same response shape as the real provider, so the service/UI are unaffected. The UI badges results "وضع تجريبي (بدون مفتاح AI)". Set `OPENAI_API_KEY` to switch to live generation with zero code changes.
+- **Permissions:** added a new `ai.view` permission to the RBAC catalog, granted to owner / manager / product-manager / marketer / accountant (idempotent seed re-run). All three endpoints require `ai.view`.
+- **Frontend (Arabic RTL):** real `/ai` page (+ sidebar "المساعد الذكي") with three assistant cards — input forms, generate buttons, loading/error states, per-result **copy** buttons, a mock-mode badge, and a no-access state gated by `ai.view`. `ai-api.ts` client wired through `apiRequest`.
+- **Not in this phase (out of scope, per the brief):** no chat UI / conversations / stored history, no agents / autonomous execution / workflows, no RAG, no chatbots, no automatic product modification, no Phase 13 webhooks, no Phase 13.5 audit logs. AI returns suggestions only; existing business logic was not modified.
 
 ## Goal
 
@@ -1418,8 +1430,8 @@ Phase 9   — Dashboard Analytics                       ✅ COMPLETED
 Phase 10  — Notifications Center                      ✅ COMPLETED
 Phase 11  — Automations MVP                           ✅ COMPLETED
 Phase 12  — Settings Module                           ✅ COMPLETED
-Phase 12.5— AI Assistants                             ⏭️ NEXT
-Phase 13  — Webhooks & Incremental Sync               ⏳ PENDING
+Phase 12.5— AI Assistants                             ✅ COMPLETED
+Phase 13  — Webhooks & Incremental Sync               ⏭️ NEXT
 Phase 13.5— Audit Logs                                ⏳ PENDING
 Phase 14  — QA, Permissions & Production Readiness    ⏳ PENDING
 ```

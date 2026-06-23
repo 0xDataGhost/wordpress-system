@@ -51,6 +51,13 @@ const envSchema = z.object({
   // threshold (a product is "low stock" when active and stock <= threshold).
   DASHBOARD_CACHE_TTL_SECONDS: z.coerce.number().int().min(0).max(3600).default(300),
   DASHBOARD_LOW_STOCK_THRESHOLD: z.coerce.number().int().min(0).max(100000).default(5),
+  // AI assistants (Phase 12.5). When OPENAI_API_KEY is unset the module falls
+  // back to a deterministic mock provider, so the API still boots and the
+  // assistants work end-to-end without external calls.
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  OPENAI_MODEL: z.string().min(1).default("gpt-4o-mini"),
+  OPENAI_BASE_URL: z.string().url().default("https://api.openai.com/v1"),
+  AI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
 });
 
 const parsed = envSchema.safeParse(process.env);

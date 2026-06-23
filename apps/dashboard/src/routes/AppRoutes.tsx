@@ -18,6 +18,7 @@ import { CustomersListPage } from "@/pages/customers/CustomersListPage";
 import { CustomerDetailsPage } from "@/pages/customers/CustomerDetailsPage";
 import { NotificationsListPage } from "@/pages/notifications/NotificationsListPage";
 import { AutomationsListPage } from "@/pages/automations/AutomationsListPage";
+import { AIAssistantsPage } from "@/pages/ai/AIAssistantsPage";
 import { SettingsPage } from "@/pages/settings/SettingsPage";
 import { PlaceholderPage } from "@/pages/PlaceholderPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
@@ -50,6 +51,7 @@ export function AppRoutes() {
             }
           />
           <Route path="/automations" element={<AutomationsListPage />} />
+          <Route path="/ai" element={<AIAssistantsPage />} />
           <Route path="/notifications" element={<NotificationsListPage />} />
           <Route path="/connection" element={<ConnectionPage />} />
           <Route path="/settings" element={<SettingsPage />} />

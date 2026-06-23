@@ -25,6 +25,7 @@ export const PERMISSIONS = [
   { key: "automations.edit", description: "Configure automations" },
   { key: "settings.view", description: "View store settings" },
   { key: "settings.edit", description: "Edit store settings" },
+  { key: "ai.view", description: "Use the AI assistants" },
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number]["key"];
@@ -73,6 +74,7 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "automations.view",
       "automations.edit",
       "settings.view",
+      "ai.view",
     ],
   },
   {
@@ -86,6 +88,7 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "products.edit",
       "products.delete",
       "customers.view",
+      "ai.view",
     ],
   },
   {
@@ -119,13 +122,14 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "products.view",
       "customers.view",
       "automations.view",
+      "ai.view",
     ],
   },
   {
     slug: "accountant",
     name: "Accountant",
     description: "Views financial data via orders and customers",
-    permissions: ["dashboard.view", "orders.view", "customers.view"],
+    permissions: ["dashboard.view", "orders.view", "customers.view", "ai.view"],
   },
   {
     slug: "viewer",
