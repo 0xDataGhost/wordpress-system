@@ -47,6 +47,10 @@ const envSchema = z.object({
   SYNC_PAGE_SIZE: z.coerce.number().int().min(1).max(100).default(50),
   // Safety cap on pages pulled per entity in one sync run (avoids unbounded loops).
   SYNC_MAX_PAGES: z.coerce.number().int().min(1).max(1000).default(200),
+  // Dashboard analytics: Redis cache TTL (seconds) and the default low-stock
+  // threshold (a product is "low stock" when active and stock <= threshold).
+  DASHBOARD_CACHE_TTL_SECONDS: z.coerce.number().int().min(0).max(3600).default(300),
+  DASHBOARD_LOW_STOCK_THRESHOLD: z.coerce.number().int().min(0).max(100000).default(5),
 });
 
 const parsed = envSchema.safeParse(process.env);

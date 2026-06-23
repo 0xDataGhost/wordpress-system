@@ -144,8 +144,8 @@ Do not build these in MVP:
 | 6 | WooCommerce Sync Foundation | ✅ COMPLETED |
 | 7 | Orders Module | ✅ COMPLETED |
 | 8 | Customers Module | ✅ COMPLETED |
-| 9 | Dashboard Analytics | ⏭️ NEXT |
-| 10 | Notifications Center | ⏳ PENDING |
+| 9 | Dashboard Analytics | ✅ COMPLETED |
+| 10 | Notifications Center | ⏭️ NEXT |
 | 11 | Automations MVP | ⏳ PENDING |
 | 12 | Settings Module | ⏳ PENDING |
 | 12.5 | AI Assistants | ⏳ PENDING |
@@ -871,7 +871,18 @@ GET /customers/:id/orders
 
 ---
 
-# Phase 9 — Dashboard Analytics ⏳ PENDING
+# Phase 9 — Dashboard Analytics ✅ COMPLETED
+
+## Implementation Notes (completed)
+
+- **Backend dashboard module** (`/dashboard/summary|sales-chart|orders-chart|recent-orders|top-products|low-stock`): JWT-protected, every route requires `dashboard.view`, tenant-scoped by `storeId`, Zod-validated. No schema/migration changes (reads existing orders/order_items/products/customers).
+- **Revenue rule:** revenue = `sum(orders.total)` over PAID statuses only — `completed`, `processing`, `on-hold`; `cancelled`/`refunded`/`failed`/`pending` are excluded. AOV = paid revenue ÷ paid order count (this month). Order *counts* and the status distribution span all statuses. (Note: this is the Phase 9 spec's paid set — slightly wider than Phase 8's customer `total_spent`, which excludes `on-hold`; documented intentionally.)
+- **Date filters:** `today`, `7d`, `30d`, `this_month`, `custom` — resolved to half-open `[start, end)` ranges in **UTC** by a pure, unit-tested resolver (timezone-safe). Charts zero-fill every day bucket. Summary KPIs are fixed-period (today / this month / current totals), independent of the filter. Custom ranges are capped at 366 days (validation 400) so chart buckets, response size, and cache payloads stay bounded.
+- **Caching:** Redis read-through cache, 5-min TTL (`DASHBOARD_CACHE_TTL_SECONDS`), fail-open. Cache keys are namespaced `dashboard:<storeId>:<endpoint>:<rangeKey>...` so cross-store reads are impossible; `?refresh=true` bypasses the read. Permission failures (403) short-circuit before any cache access, so they are never cached.
+- **Low stock:** active products with `stock_quantity <= threshold` (`DASHBOARD_LOW_STOCK_THRESHOLD`, default 5). `productsCount` = non-archived catalog.
+- **Frontend (Arabic RTL):** real `/dashboard` replacing the placeholder — 9 KPI cards, revenue + orders bar charts (lightweight dependency-free SVG/CSS components, no external chart lib), order-status distribution bars, recent-orders / top-products / low-stock tables, a date-range filter, a refresh button, and loading/error/empty states. Light + dark compatible.
+- **Read-only:** sync behavior was not modified.
+- **Not in this phase (out of scope):** notifications (Phase 10), automations (Phase 11), settings (Phase 12), webhooks (Phase 13), AI (Phase 12.5).
 
 ## Goal
 
@@ -1371,8 +1382,8 @@ Phase 5.2 — Hardening (Connection backend + rate limit) ✅ COMPLETED
 Phase 6   — WooCommerce Sync Foundation               ✅ COMPLETED
 Phase 7   — Orders Module                             ✅ COMPLETED
 Phase 8   — Customers Module                          ✅ COMPLETED
-Phase 9   — Dashboard Analytics                       ⏭️ NEXT
-Phase 10  — Notifications Center                      ⏳ PENDING
+Phase 9   — Dashboard Analytics                       ✅ COMPLETED
+Phase 10  — Notifications Center                      ⏭️ NEXT
 Phase 11  — Automations MVP                           ⏳ PENDING
 Phase 12  — Settings Module                           ⏳ PENDING
 Phase 12.5— AI Assistants                             ⏳ PENDING
