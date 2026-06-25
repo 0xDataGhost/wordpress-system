@@ -24,6 +24,12 @@ interface RateLimitOptions {
   max?: number;
   /** Window length in seconds. Defaults to AUTH_RATE_LIMIT_WINDOW_SECONDS. */
   windowSeconds?: number;
+  /**
+   * Whether this limiter is active. Defaults to AUTH_RATE_LIMIT_ENABLED so
+   * existing auth buckets are unchanged; non-auth callers (e.g. the digital code
+   * reveal endpoint) pass their own flag so they are not coupled to the auth one.
+   */
+  enabled?: boolean;
 }
 
 /**
@@ -34,9 +40,10 @@ interface RateLimitOptions {
 export function rateLimit(options: RateLimitOptions): RequestHandler {
   const max = options.max ?? env.AUTH_RATE_LIMIT_MAX;
   const windowSeconds = options.windowSeconds ?? env.AUTH_RATE_LIMIT_WINDOW_SECONDS;
+  const enabled = options.enabled ?? env.AUTH_RATE_LIMIT_ENABLED;
 
   return (req, res, next) => {
-    if (!env.AUTH_RATE_LIMIT_ENABLED) {
+    if (!enabled) {
       next();
       return;
     }

@@ -29,6 +29,10 @@ export const AUDIT_ACTIONS = {
   WEBHOOK_FAILED: "webhook.failed",
   AI_USED: "ai.used",
   DIGITAL_PRODUCT_SETTINGS_UPDATED: "digital_product_settings_updated",
+  DIGITAL_CODES_IMPORTED: "digital_codes_imported",
+  DIGITAL_CODE_REVEALED: "digital_code_revealed",
+  DIGITAL_CODE_STATUS_UPDATED: "digital_code_status_updated",
+  DIGITAL_BATCH_CREATED: "digital_batch_created",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
@@ -51,6 +55,8 @@ export const AUDIT_ENTITY_TYPES = {
   SYNC: "sync",
   WEBHOOK: "webhook",
   AI: "ai",
+  DIGITAL_CODE: "digital_code",
+  DIGITAL_BATCH: "digital_batch",
 } as const;
 
 export type AuditEntityType =

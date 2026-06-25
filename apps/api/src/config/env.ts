@@ -66,6 +66,29 @@ const envSchema = z.object({
   // require both when digital fulfillment is actually used.
   DIGITAL_CODE_ENCRYPTION_KEY: z.string().min(1).optional(),
   DIGITAL_CODE_HASH_KEY: z.string().min(1).optional(),
+  // Max codes accepted in a single /digital-inventory/import request.
+  DIGITAL_CODE_IMPORT_MAX_CODES: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(100_000)
+    .default(5000),
+  // Per-IP rate limit for the sensitive code-reveal endpoint (own bucket, so it
+  // is independent of the auth limiter). Window in seconds; max per window.
+  DIGITAL_CODE_REVEAL_RATE_LIMIT_ENABLED: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((value) => value === "true"),
+  DIGITAL_CODE_REVEAL_RATE_LIMIT_WINDOW_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(60),
+  DIGITAL_CODE_REVEAL_RATE_LIMIT_MAX: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(20),
 });
 
 const parsed = envSchema.safeParse(process.env);

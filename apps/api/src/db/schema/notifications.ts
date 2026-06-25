@@ -20,6 +20,7 @@ export const NOTIFICATION_TYPES = [
   "failed_sync",
   "failed_automation",
   "daily_report",
+  "digital_inventory",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

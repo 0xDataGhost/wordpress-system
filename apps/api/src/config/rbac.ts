@@ -34,6 +34,22 @@ export const PERMISSIONS = [
     key: "digital_inventory.edit",
     description: "Edit digital product fulfillment settings",
   },
+  {
+    key: "digital_inventory.import",
+    description: "Import digital codes into a product's inventory",
+  },
+  {
+    key: "digital_inventory.reveal",
+    description: "Reveal the full plaintext of a digital code",
+  },
+  {
+    key: "digital_inventory.export",
+    description: "Export digital code inventory",
+  },
+  {
+    key: "digital_inventory.delete",
+    description: "Permanently delete digital codes (prefer voiding instead)",
+  },
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number]["key"];
@@ -85,6 +101,9 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "ai.view",
       "digital_inventory.view",
       "digital_inventory.edit",
+      "digital_inventory.import",
+      "digital_inventory.reveal",
+      "digital_inventory.export",
     ],
   },
   {
@@ -101,6 +120,7 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "ai.view",
       "digital_inventory.view",
       "digital_inventory.edit",
+      "digital_inventory.import",
     ],
   },
   {

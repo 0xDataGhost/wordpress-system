@@ -16,6 +16,7 @@ import storeRoutes from "../modules/stores/stores.routes";
 import wpRoutes from "../modules/connections/wp.routes";
 import syncRoutes from "../modules/sync/sync.routes";
 import auditLogRoutes from "../modules/audit-logs/audit-logs.routes";
+import digitalInventoryRoutes from "../modules/digital-inventory/digital-inventory.routes";
 
 /**
  * Root API router, mounted under env.API_PREFIX (default /api/v1).
@@ -49,6 +50,7 @@ router.use("/settings", settingsRoutes);
 router.use("/ai", aiRoutes);
 router.use("/sync", syncRoutes);
 router.use("/audit-logs", auditLogRoutes);
+router.use("/digital-inventory", digitalInventoryRoutes);
 router.use("/wp", wpRoutes);
 
 export default router;
