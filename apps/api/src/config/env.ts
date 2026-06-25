@@ -58,6 +58,14 @@ const envSchema = z.object({
   OPENAI_MODEL: z.string().min(1).default("gpt-4o-mini"),
   OPENAI_BASE_URL: z.string().url().default("https://api.openai.com/v1"),
   AI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
+  // Digital code inventory (Phase 16). Used by lib/digital-code-crypto to
+  // encrypt raw codes at rest (AES-256-GCM) and to compute the keyed
+  // HMAC-SHA256 duplicate fingerprint. ENCRYPTION_KEY must decode to 32 bytes
+  // (64 hex chars or base64); HASH_KEY is a strong random secret. Optional so
+  // the API still boots without the digital module; the import path will
+  // require both when digital fulfillment is actually used.
+  DIGITAL_CODE_ENCRYPTION_KEY: z.string().min(1).optional(),
+  DIGITAL_CODE_HASH_KEY: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
