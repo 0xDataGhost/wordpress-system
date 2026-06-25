@@ -108,6 +108,11 @@ const DigitalBatchesPage = lazy(() =>
     default: m.DigitalBatchesPage,
   })),
 );
+const DigitalReportsPage = lazy(() =>
+  import("@/pages/digital-reports/DigitalReportsPage").then((m) => ({
+    default: m.DigitalReportsPage,
+  })),
+);
 const PlaceholderPage = lazy(() =>
   import("@/pages/PlaceholderPage").then((m) => ({
     default: m.PlaceholderPage,
@@ -165,6 +170,7 @@ export function AppRoutes() {
               path="/digital-inventory/batches"
               element={<DigitalBatchesPage />}
             />
+            <Route path="/digital-reports" element={<DigitalReportsPage />} />
           </Route>
         </Route>
 

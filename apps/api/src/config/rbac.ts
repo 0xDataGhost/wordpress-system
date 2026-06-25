@@ -82,6 +82,10 @@ export const PERMISSIONS = [
     key: "digital_suppliers.delete",
     description: "Archive suppliers",
   },
+  {
+    key: "digital_reports.view",
+    description: "View digital product reports and profit analytics",
+  },
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number]["key"];
@@ -144,6 +148,7 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "digital_suppliers.create",
       "digital_suppliers.edit",
       "digital_suppliers.delete",
+      "digital_reports.view",
     ],
   },
   {
@@ -164,6 +169,7 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "digital_suppliers.view",
       "digital_suppliers.create",
       "digital_suppliers.edit",
+      "digital_reports.view",
     ],
   },
   {
@@ -206,13 +212,20 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "customers.view",
       "automations.view",
       "ai.view",
+      "digital_reports.view",
     ],
   },
   {
     slug: "accountant",
     name: "Accountant",
     description: "Views financial data via orders and customers",
-    permissions: ["dashboard.view", "orders.view", "customers.view", "ai.view"],
+    permissions: [
+      "dashboard.view",
+      "orders.view",
+      "customers.view",
+      "ai.view",
+      "digital_reports.view",
+    ],
   },
   {
     slug: "viewer",

@@ -11,6 +11,7 @@ import {
   Settings,
   ScrollText,
   KeyRound,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 
@@ -51,6 +52,12 @@ export const navItems: NavItem[] = [
     to: "/digital-inventory",
     icon: KeyRound,
     permission: "digital_inventory.view",
+  },
+  {
+    label: "تقارير الأكواد",
+    to: "/digital-reports",
+    icon: BarChart3,
+    permission: "digital_reports.view",
   },
   {
     label: "الطلبات",
