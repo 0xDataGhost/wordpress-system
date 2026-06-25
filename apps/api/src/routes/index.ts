@@ -3,6 +3,7 @@ import { successResponse } from "../lib/api-response";
 import { env } from "../config/env";
 import authRoutes from "../modules/auth/auth.routes";
 import productRoutes from "../modules/products/products.routes";
+import digitalProductRoutes from "../modules/digital-products/digital-products.routes";
 import orderRoutes from "../modules/orders/orders.routes";
 import customerRoutes from "../modules/customers/customers.routes";
 import dashboardRoutes from "../modules/dashboard/dashboard.routes";
@@ -35,6 +36,10 @@ router.use("/auth", authRoutes);
 router.use("/stores", storeRoutes);
 router.use("/roles", roleRoutes);
 router.use("/products", productRoutes);
+// Phase 15 digital product settings: GET/PATCH /products/:id/digital-settings.
+// Mounted after productRoutes; the products router has no GET /:id/<segment>
+// route, so digital-settings requests fall through to this router.
+router.use("/products", digitalProductRoutes);
 router.use("/orders", orderRoutes);
 router.use("/customers", customerRoutes);
 router.use("/dashboard", dashboardRoutes);

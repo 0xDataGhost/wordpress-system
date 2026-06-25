@@ -26,6 +26,14 @@ export const PERMISSIONS = [
   { key: "settings.view", description: "View store settings" },
   { key: "settings.edit", description: "Edit store settings" },
   { key: "ai.view", description: "Use the AI assistants" },
+  {
+    key: "digital_inventory.view",
+    description: "View digital product fulfillment settings",
+  },
+  {
+    key: "digital_inventory.edit",
+    description: "Edit digital product fulfillment settings",
+  },
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number]["key"];
@@ -75,6 +83,8 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "automations.edit",
       "settings.view",
       "ai.view",
+      "digital_inventory.view",
+      "digital_inventory.edit",
     ],
   },
   {
@@ -89,6 +99,8 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "products.delete",
       "customers.view",
       "ai.view",
+      "digital_inventory.view",
+      "digital_inventory.edit",
     ],
   },
   {
@@ -100,6 +112,7 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "orders.view",
       "orders.edit",
       "customers.view",
+      "digital_inventory.view",
     ],
   },
   {
@@ -111,6 +124,7 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "customers.view",
       "customers.edit",
       "orders.view",
+      "digital_inventory.view",
     ],
   },
   {
@@ -140,6 +154,7 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "products.view",
       "orders.view",
       "customers.view",
+      "digital_inventory.view",
     ],
   },
 ];
