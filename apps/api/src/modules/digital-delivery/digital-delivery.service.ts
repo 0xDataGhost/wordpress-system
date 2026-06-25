@@ -192,7 +192,8 @@ export async function listQueue(
     ),
     classified as (
       select *, (case
-        when assigned_codes >= required_codes then 'completed'
+        when digital_delivery_status = 'completed' then 'completed'
+        when assigned_codes >= required_codes then 'reserved'
         when digital_delivery_status = 'manual_review' then 'manual_review'
         when assigned_codes > 0 then 'partial'
         else 'pending' end) as computed_status

@@ -36,6 +36,13 @@ export const AUDIT_ACTIONS = {
   DIGITAL_CODES_ASSIGNED: "digital_codes_assigned",
   DIGITAL_ASSIGNMENT_PARTIAL: "digital_assignment_partial",
   DIGITAL_ASSIGNMENT_FAILED: "digital_assignment_failed",
+  DIGITAL_CODES_DELIVERED: "digital_codes_delivered",
+  DIGITAL_DELIVERY_FAILED: "digital_delivery_failed",
+  DIGITAL_DELIVERY_RETRIED: "digital_delivery_retried",
+  DIGITAL_CODE_MANUALLY_ASSIGNED: "digital_code_manually_assigned",
+  DIGITAL_CODE_REPLACED: "digital_code_replaced",
+  DIGITAL_CODE_RELEASED: "digital_code_released",
+  DIGITAL_ORDER_STATUS_CHANGED: "digital_order_digital_status_changed",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

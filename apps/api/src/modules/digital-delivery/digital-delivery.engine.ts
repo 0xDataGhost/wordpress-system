@@ -56,17 +56,26 @@ function poolOrder(strategy: string): SQL {
 }
 
 /**
- * Derives the order-level digital delivery status. `attempted` means at least one
- * eligible product was processed this run — distinguishing "tried but short of
- * stock" (manual_review) from "not yet eligible" (pending).
+ * Derives the order-level digital delivery status after an assignment run.
+ * `attempted` means at least one eligible product was processed this run —
+ * distinguishing "tried but short of stock" (manual_review) from "not yet
+ * eligible" (pending).
+ *
+ * Fully assigned maps to `reserved` (codes held for the order, awaiting
+ * delivery) — `completed` is reserved for Phase 18 delivery. An already-delivered
+ * order (currentStatus `completed`) is never downgraded, so a re-sync /
+ * re-assignment cannot clobber a finished delivery.
  */
 export function deriveOrderDigitalStatus(
   requiredCodes: number,
   assignedCodes: number,
   attempted: boolean,
+  currentStatus: string,
 ): OrderDigitalDeliveryStatus {
   if (requiredCodes === 0) return "not_required";
-  if (assignedCodes >= requiredCodes) return "completed";
+  if (assignedCodes >= requiredCodes) {
+    return currentStatus === "completed" ? "completed" : "reserved";
+  }
   if (assignedCodes > 0) return "partial";
   return attempted ? "manual_review" : "pending";
 }
@@ -155,6 +164,7 @@ export async function assignCodesForOrder(
       id: orders.id,
       status: orders.status,
       customerId: orders.customerId,
+      digitalDeliveryStatus: orders.digitalDeliveryStatus,
     })
     .from(orders)
     .where(and(eq(orders.storeId, storeId), eq(orders.id, orderId)))
@@ -343,13 +353,15 @@ export async function assignCodesForOrder(
       requiredCodes,
       assignedCodes,
       attempted,
+      order.digitalDeliveryStatus,
     );
+    // `completedAt` is owned by the delivery engine (Phase 18) — assignment never
+    // sets it, so a preserved `completed` keeps its original delivery timestamp.
     await tx
       .update(orders)
       .set({
         digitalDeliveryRequired: true,
         digitalDeliveryStatus: status,
-        digitalDeliveryCompletedAt: status === "completed" ? now : null,
         updatedAt: now,
       })
       .where(and(eq(orders.storeId, storeId), eq(orders.id, orderId)));

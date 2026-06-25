@@ -22,10 +22,11 @@ export type AssignOrderInput = z.infer<typeof assignOrderSchema>;
 export const orderParamsSchema = z.object({ orderId: z.string().uuid() });
 export type OrderParams = z.infer<typeof orderParamsSchema>;
 
-/** Statuses the delivery queue can be filtered by (plan2 §17). */
+/** Statuses the delivery queue can be filtered by (plan2 §17/§18). */
 export const QUEUE_STATUSES = [
   "pending",
   "partial",
+  "reserved",
   "failed",
   "manual_review",
   "completed",

@@ -33,24 +33,28 @@ function makeResult(
 }
 
 test("deriveOrderDigitalStatus: not_required when nothing is needed", () => {
-  assert.equal(deriveOrderDigitalStatus(0, 0, false), "not_required");
+  assert.equal(deriveOrderDigitalStatus(0, 0, false, "not_required"), "not_required");
 });
 
-test("deriveOrderDigitalStatus: completed when fully assigned", () => {
-  assert.equal(deriveOrderDigitalStatus(3, 3, true), "completed");
-  assert.equal(deriveOrderDigitalStatus(3, 4, true), "completed");
+test("deriveOrderDigitalStatus: reserved when fully assigned (awaiting delivery)", () => {
+  assert.equal(deriveOrderDigitalStatus(3, 3, true, "pending"), "reserved");
+  assert.equal(deriveOrderDigitalStatus(3, 4, true, "pending"), "reserved");
+});
+
+test("deriveOrderDigitalStatus: preserves completed (delivered) on re-assignment", () => {
+  assert.equal(deriveOrderDigitalStatus(3, 3, true, "completed"), "completed");
 });
 
 test("deriveOrderDigitalStatus: partial when some but not all assigned", () => {
-  assert.equal(deriveOrderDigitalStatus(3, 1, true), "partial");
+  assert.equal(deriveOrderDigitalStatus(3, 1, true, "pending"), "partial");
 });
 
 test("deriveOrderDigitalStatus: manual_review when attempted but nothing assigned", () => {
-  assert.equal(deriveOrderDigitalStatus(3, 0, true), "manual_review");
+  assert.equal(deriveOrderDigitalStatus(3, 0, true, "pending"), "manual_review");
 });
 
 test("deriveOrderDigitalStatus: pending when needed but not yet attempted", () => {
-  assert.equal(deriveOrderDigitalStatus(3, 0, false), "pending");
+  assert.equal(deriveOrderDigitalStatus(3, 0, false, "pending"), "pending");
 });
 
 test("buildAssignmentAuditEntry: success → digital_codes_assigned", () => {

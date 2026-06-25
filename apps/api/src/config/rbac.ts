@@ -58,6 +58,14 @@ export const PERMISSIONS = [
     key: "digital_delivery.assign",
     description: "Assign digital codes to orders",
   },
+  {
+    key: "digital_delivery.deliver",
+    description: "Deliver assigned digital codes for an order",
+  },
+  {
+    key: "digital_delivery.retry",
+    description: "Retry a failed digital code delivery",
+  },
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number]["key"];
@@ -114,6 +122,8 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "digital_inventory.export",
       "digital_delivery.view",
       "digital_delivery.assign",
+      "digital_delivery.deliver",
+      "digital_delivery.retry",
     ],
   },
   {
@@ -145,6 +155,8 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "digital_inventory.view",
       "digital_delivery.view",
       "digital_delivery.assign",
+      "digital_delivery.deliver",
+      "digital_delivery.retry",
     ],
   },
   {
@@ -158,6 +170,7 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "orders.view",
       "digital_inventory.view",
       "digital_delivery.view",
+      "digital_delivery.retry",
     ],
   },
   {

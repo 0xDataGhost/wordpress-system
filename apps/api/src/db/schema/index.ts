@@ -32,3 +32,5 @@ export * from "./digital-product-settings";
 export * from "./code-batches";
 export * from "./digital-codes";
 export * from "./code-assignments";
+export * from "./digital-deliveries";
+export * from "./delivery-attempts";

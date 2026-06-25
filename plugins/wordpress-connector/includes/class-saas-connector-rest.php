@@ -34,9 +34,17 @@ class Saas_Connector_Rest {
 	 */
 	private $sync;
 
+	/**
+	 * Digital delivery note handler.
+	 *
+	 * @var Saas_Connector_Delivery
+	 */
+	private $delivery;
+
 	public function __construct() {
 		$this->products = new Saas_Connector_Products();
 		$this->sync     = new Saas_Connector_Sync();
+		$this->delivery = new Saas_Connector_Delivery();
 	}
 
 	/**
@@ -133,6 +141,25 @@ class Saas_Connector_Rest {
 				'callback'            => array( $this->sync, 'get_customers' ),
 				'permission_callback' => array( $this->sync, 'authorize' ),
 				'args'                => $sync_args,
+			)
+		);
+
+		// Phase 18: digital delivery note. The SaaS posts a safe "codes ready"
+		// note (no codes) when a digital order is delivered.
+		register_rest_route(
+			self::NAMESPACE,
+			'/orders/(?P<id>\d+)/digital-note',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this->delivery, 'add_digital_note' ),
+				'permission_callback' => array( $this->delivery, 'authorize' ),
+				'args'                => array(
+					'id' => array(
+						'validate_callback' => static function ( $value ) {
+							return is_numeric( $value );
+						},
+					),
+				),
 			)
 		);
 	}

@@ -10,6 +10,7 @@ import {
 } from "../../db/schema/webhook-events";
 import { touchLastSync } from "../connections/connections.service";
 import { maybeAssignCodesForOrder } from "../digital-delivery/digital-delivery.service";
+import { maybeDeliverCodesForOrder } from "../digital-delivery/delivery.service";
 import { upsertCustomersFromWoo } from "../sync/customers.sync";
 import { upsertOrdersFromWoo } from "../sync/orders.sync";
 import { upsertProductsFromWoo } from "../sync/products.sync";
@@ -221,6 +222,10 @@ async function processOrderEvent(
     .limit(1);
   if (orderRow) {
     await maybeAssignCodesForOrder(storeId, orderRow.id);
+    // Phase 18: auto-deliver eligible orders right after assignment. Best-effort
+    // (status-gated on deliver_on_statuses + auto_delivery_enabled); never fails
+    // the webhook and is idempotent on repeated order.updated deliveries.
+    await maybeDeliverCodesForOrder(storeId, orderRow.id);
   }
 
   return result.created > 0 ? "created" : "updated";
