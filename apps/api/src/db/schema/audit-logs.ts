@@ -28,6 +28,7 @@ export const AUDIT_ACTIONS = {
   WEBHOOK_PROCESSED: "webhook.processed",
   WEBHOOK_FAILED: "webhook.failed",
   AI_USED: "ai.used",
+  DIGITAL_PRODUCT_SETTINGS_UPDATED: "digital_product_settings_updated",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
