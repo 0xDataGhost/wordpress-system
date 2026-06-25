@@ -12,6 +12,7 @@ import {
   ProductForm,
   type ProductFormValues,
 } from "@/components/products/ProductForm";
+import { DigitalSettingsCard } from "@/components/products/DigitalSettingsCard";
 import { getProduct, updateProduct, type ProductDto } from "@/lib/products-api";
 
 function toDefaults(product: ProductDto): Partial<ProductFormValues> {
@@ -31,6 +32,8 @@ export function ProductEditPage() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const canEdit = hasPermission("products.edit");
+  const canViewDigital = hasPermission("digital_inventory.view");
+  const canEditDigital = hasPermission("digital_inventory.edit");
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -100,16 +103,25 @@ export function ProductEditPage() {
           onRetry={() => void load()}
         />
       ) : (
-        <Card className="max-w-3xl">
-          <CardContent className="pt-6">
-            <ProductForm
-              defaultValues={toDefaults(product)}
-              submitLabel="حفظ التغييرات"
-              onSubmit={handleSubmit}
-              onCancel={() => navigate(`/products/${product.id}`)}
+        <div className="max-w-3xl space-y-6">
+          <Card>
+            <CardContent className="pt-6">
+              <ProductForm
+                defaultValues={toDefaults(product)}
+                submitLabel="حفظ التغييرات"
+                onSubmit={handleSubmit}
+                onCancel={() => navigate(`/products/${product.id}`)}
+              />
+            </CardContent>
+          </Card>
+
+          {canViewDigital ? (
+            <DigitalSettingsCard
+              productId={product.id}
+              canEdit={canEditDigital}
             />
-          </CardContent>
-        </Card>
+          ) : null}
+        </div>
       )}
     </div>
   );

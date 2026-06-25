@@ -14,13 +14,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { PRODUCT_STATUS_META } from "@/components/products/product-status";
+import { DigitalFulfillmentSummary } from "@/components/products/DigitalFulfillmentSummary";
 import {
   archiveProduct,
   getProduct,
   publishProduct,
   type ProductDto,
 } from "@/lib/products-api";
+import {
+  getDigitalSettings,
+  type DigitalSettingsDto,
+} from "@/lib/digital-products-api";
 import { formatDateTime } from "@/lib/utils";
 
 type Banner = { tone: "success" | "error"; message: string };
@@ -46,7 +52,9 @@ export function ProductDetailsPage() {
   const { hasPermission } = useAuth();
   const canEdit = hasPermission("products.edit");
   const canArchive = hasPermission("products.delete");
+  const canViewDigital = hasPermission("digital_inventory.view");
   const [product, setProduct] = useState<ProductDto | null>(null);
+  const [digital, setDigital] = useState<DigitalSettingsDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [banner, setBanner] = useState<Banner | null>(null);
@@ -58,14 +66,22 @@ export function ProductDetailsPage() {
     if (!id) return;
     setLoading(true);
     setError(false);
-    try {
-      setProduct(await getProduct(id));
-    } catch {
+    // Product is critical; digital settings are best-effort (an empty/failed
+    // digital read must not break the details page). Fetched in parallel.
+    const [productResult, digitalResult] = await Promise.allSettled([
+      getProduct(id),
+      canViewDigital ? getDigitalSettings(id) : Promise.resolve(null),
+    ]);
+    if (productResult.status === "fulfilled") {
+      setProduct(productResult.value);
+      setDigital(
+        digitalResult.status === "fulfilled" ? digitalResult.value : null,
+      );
+    } else {
       setError(true);
-    } finally {
-      setLoading(false);
     }
-  }, [id]);
+    setLoading(false);
+  }, [id, canViewDigital]);
 
   useEffect(() => {
     void load();
@@ -119,10 +135,13 @@ export function ProductDetailsPage() {
         title={product?.name ?? "تفاصيل المنتج"}
         description="عرض تفاصيل المنتج وإدارته."
         actions={
-          <Button variant="outline" onClick={() => navigate("/products")}>
-            <ArrowRight className="h-4 w-4" />
-            رجوع
-          </Button>
+          <>
+            {digital?.is_enabled ? <Badge variant="success">رقمي</Badge> : null}
+            <Button variant="outline" onClick={() => navigate("/products")}>
+              <ArrowRight className="h-4 w-4" />
+              رجوع
+            </Button>
+          </>
         }
       />
 
@@ -248,6 +267,10 @@ export function ProductDetailsPage() {
               </CardContent>
             </Card>
           </div>
+
+          {canViewDigital && digital ? (
+            <DigitalFulfillmentSummary settings={digital} />
+          ) : null}
         </div>
       )}
 

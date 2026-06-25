@@ -27,6 +27,7 @@ export function ProductCreatePage() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const canCreate = hasPermission("products.create");
+  const canViewDigital = hasPermission("digital_inventory.view");
 
   async function handleSubmit(values: ProductFormValues) {
     const created = await createProduct(toInput(values));
@@ -53,15 +54,24 @@ export function ProductCreatePage() {
           description="تحتاج صلاحية «إنشاء المنتجات» لإضافة منتج جديد."
         />
       ) : (
-        <Card className="max-w-3xl">
-          <CardContent className="pt-6">
-            <ProductForm
-              submitLabel="حفظ المنتج"
-              onSubmit={handleSubmit}
-              onCancel={() => navigate("/products")}
-            />
-          </CardContent>
-        </Card>
+        <div className="max-w-3xl space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <ProductForm
+                submitLabel="حفظ المنتج"
+                onSubmit={handleSubmit}
+                onCancel={() => navigate("/products")}
+              />
+            </CardContent>
+          </Card>
+
+          {canViewDigital ? (
+            <p className="rounded-md border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+              تُضبط إعدادات المنتج الرقمي (تسليم الأكواد) من صفحة تعديل المنتج بعد
+              إنشائه.
+            </p>
+          ) : null}
+        </div>
       )}
     </div>
   );
