@@ -5,20 +5,27 @@ import { digitalCodes } from "../../db/schema/digital-codes";
 import { digitalProductSettings } from "../../db/schema/digital-product-settings";
 import { orderItems } from "../../db/schema/order-items";
 import { orders } from "../../db/schema/orders";
+import { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } from "../../db/schema/audit-logs";
 import { NotFoundError, ValidationError } from "../../lib/errors";
+import { logger } from "../../lib/logger";
+import { recordAuditLog } from "../audit-logs/audit-logs.service";
 import { createNotification } from "../notifications/notifications.service";
 import { deliverCodesForOrder } from "./delivery.service";
 import {
   assertAssignmentTransition,
   assertCodeTransition,
+  decideAssignmentStatusOutcome,
   decideReleaseOutcome,
   orderStatusForRelease,
+  type AssignmentStatusTarget,
   type ReleaseMode,
 } from "./transitions";
 import type {
+  AssignmentStatusInput,
   ManualAssignInput,
   ReleaseInput,
   ReplaceInput,
+  ResendInput,
 } from "./manual.schemas";
 
 /**
@@ -547,6 +554,247 @@ export async function releaseOrderCodes(
     orderStatusBefore: order.digitalDeliveryStatus,
     orderStatus: result.orderStatus,
   };
+}
+
+/* --------------------------------- Resend --------------------------------- */
+
+export interface ResendResult {
+  orderId: string;
+  assignmentId: string;
+  codeId: string;
+  delivered: boolean;
+  channel: string;
+  deliveryId: string | null;
+}
+
+/**
+ * Resends an assignment's code to the customer (plan2 §19). Re-delivers the
+ * order's codes through the (safe) chosen channel with `force` so an already
+ * delivered code is sent again — WITHOUT creating a new assignment. A fresh
+ * delivery + attempt are recorded by the delivery engine. No raw code is exposed.
+ */
+export async function resendAssignment(
+  storeId: string,
+  assignmentId: string,
+  input: ResendInput,
+  actorUserId: string | null,
+): Promise<ResendResult> {
+  const [assignment] = await db
+    .select({
+      id: codeAssignments.id,
+      codeId: codeAssignments.codeId,
+      orderId: codeAssignments.orderId,
+      status: codeAssignments.status,
+    })
+    .from(codeAssignments)
+    .where(
+      and(eq(codeAssignments.storeId, storeId), eq(codeAssignments.id, assignmentId)),
+    )
+    .limit(1);
+  if (!assignment) throw new NotFoundError("Assignment not found");
+  if (assignment.status !== "assigned" && assignment.status !== "delivered") {
+    throw new ValidationError("Only active assignments can be resent.");
+  }
+
+  const result = await deliverCodesForOrder(storeId, assignment.orderId, {
+    channel: input.channel,
+    force: true,
+    actorUserId,
+    isRetry: true,
+  });
+
+  return {
+    orderId: assignment.orderId,
+    assignmentId: assignment.id,
+    codeId: assignment.codeId,
+    delivered: result.delivered,
+    channel: result.channel,
+    deliveryId: result.delivery?.id ?? null,
+  };
+}
+
+/* ------------------------- Assignment status change ------------------------ */
+
+export interface UpdateAssignmentStatusResult {
+  orderId: string;
+  assignmentId: string;
+  codeId: string;
+  status: AssignmentStatusTarget;
+  codeStatus: string | null;
+  orderStatusBefore: string;
+  orderStatus: string;
+}
+
+/**
+ * Manually transitions an assignment to a destructive support status
+ * (cancelled / refunded / failed). Transactional + tenant-scoped. The code-side
+ * effect follows the golden rule (delivered codes are locked as `refunded`, never
+ * returned to stock); `failed` leaves the code untouched for a later retry.
+ */
+export async function updateAssignmentStatus(
+  storeId: string,
+  assignmentId: string,
+  input: AssignmentStatusInput,
+  _actorUserId: string | null,
+): Promise<UpdateAssignmentStatusResult> {
+  const [assignment] = await db
+    .select({
+      id: codeAssignments.id,
+      codeId: codeAssignments.codeId,
+      orderId: codeAssignments.orderId,
+      status: codeAssignments.status,
+    })
+    .from(codeAssignments)
+    .where(
+      and(eq(codeAssignments.storeId, storeId), eq(codeAssignments.id, assignmentId)),
+    )
+    .limit(1);
+  if (!assignment) throw new NotFoundError("Assignment not found");
+
+  assertAssignmentTransition(assignment.status, input.status);
+  const outcome = decideAssignmentStatusOutcome(assignment.status, input.status);
+
+  const [order] = await db
+    .select({ digitalDeliveryStatus: orders.digitalDeliveryStatus })
+    .from(orders)
+    .where(and(eq(orders.storeId, storeId), eq(orders.id, assignment.orderId)))
+    .limit(1);
+  const orderStatusBefore = order?.digitalDeliveryStatus ?? "unknown";
+
+  const now = new Date();
+  const orderStatus = await db.transaction(async (tx) => {
+    if (outcome.codeAction !== "none" && outcome.newCodeStatus) {
+      const [code] = await tx
+        .select({ status: digitalCodes.status })
+        .from(digitalCodes)
+        .where(
+          and(eq(digitalCodes.storeId, storeId), eq(digitalCodes.id, assignment.codeId)),
+        )
+        .limit(1);
+      if (code) {
+        assertCodeTransition(code.status, outcome.newCodeStatus);
+        if (outcome.codeAction === "release_to_available") {
+          await tx
+            .update(digitalCodes)
+            .set({
+              status: "available",
+              assignedOrderId: null,
+              assignedOrderItemId: null,
+              assignedCustomerId: null,
+              soldAt: null,
+              updatedAt: now,
+            })
+            .where(
+              and(eq(digitalCodes.storeId, storeId), eq(digitalCodes.id, assignment.codeId)),
+            );
+        } else {
+          await tx
+            .update(digitalCodes)
+            .set({ status: outcome.newCodeStatus, updatedAt: now })
+            .where(
+              and(eq(digitalCodes.storeId, storeId), eq(digitalCodes.id, assignment.codeId)),
+            );
+        }
+      }
+    }
+
+    await tx
+      .update(codeAssignments)
+      .set({
+        status: outcome.newAssignmentStatus,
+        notes: input.reason,
+        updatedAt: now,
+      })
+      .where(
+        and(eq(codeAssignments.storeId, storeId), eq(codeAssignments.id, assignment.id)),
+      );
+
+    return recomputeOrderDigitalStatus(tx, storeId, assignment.orderId);
+  });
+
+  return {
+    orderId: assignment.orderId,
+    assignmentId: assignment.id,
+    codeId: assignment.codeId,
+    status: input.status,
+    codeStatus: outcome.newCodeStatus,
+    orderStatusBefore,
+    orderStatus,
+  };
+}
+
+/* --------------------- Webhook-driven safe release (§19) -------------------- */
+
+/**
+ * Webhook seam (plan2 §19): when a WooCommerce order becomes cancelled/refunded,
+ * release its digital codes safely. Best-effort — NEVER throws (the order sync has
+ * already succeeded). Idempotent + quiet: skips when there is nothing to release
+ * or the order's digital status is already terminal. Delivered/revealed codes are
+ * never returned to stock (enforced by `decideReleaseOutcome`).
+ */
+export async function maybeReleaseCodesForOrder(
+  storeId: string,
+  orderId: string,
+  orderStatus: string,
+): Promise<void> {
+  try {
+    const mode: ReleaseMode | null =
+      orderStatus === "refunded"
+        ? "refund"
+        : orderStatus === "cancelled"
+          ? "cancel"
+          : null;
+    if (!mode) return;
+
+    const [order] = await db
+      .select({
+        digitalDeliveryStatus: orders.digitalDeliveryStatus,
+        digitalDeliveryRequired: orders.digitalDeliveryRequired,
+      })
+      .from(orders)
+      .where(and(eq(orders.storeId, storeId), eq(orders.id, orderId)))
+      .limit(1);
+    if (!order || !order.digitalDeliveryRequired) return;
+    if (
+      order.digitalDeliveryStatus === "refunded" ||
+      order.digitalDeliveryStatus === "cancelled"
+    ) {
+      return;
+    }
+
+    const result = await releaseOrderCodes(
+      storeId,
+      orderId,
+      { mode, reason: `Order ${orderStatus} via WooCommerce webhook` },
+      null,
+    );
+
+    await recordAuditLog({
+      storeId,
+      userId: null,
+      action:
+        mode === "refund"
+          ? AUDIT_ACTIONS.DIGITAL_ASSIGNMENT_REFUNDED
+          : AUDIT_ACTIONS.DIGITAL_ASSIGNMENT_CANCELLED,
+      entityType: AUDIT_ENTITY_TYPES.DIGITAL_DELIVERY,
+      entityId: orderId,
+      message:
+        mode === "refund"
+          ? "استرجاع تلقائي لأكواد الطلب (ويب هوك)"
+          : "إلغاء تلقائي لأكواد الطلب (ويب هوك)",
+      metadata: {
+        orderId,
+        mode,
+        releasedCount: result.releasedCount,
+        refundedCount: result.refundedCount,
+        deliveredSkippedCount: result.deliveredSkippedCount,
+      },
+      ipAddress: null,
+      userAgent: null,
+    });
+  } catch (err) {
+    logger.error({ err, storeId, orderId }, "Auto digital release failed");
+  }
 }
 
 /* ------------------------------ Notifications ----------------------------- */

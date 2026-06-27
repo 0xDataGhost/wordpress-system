@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  assignmentStatusSchema,
   manualAssignSchema,
   releaseSchema,
   replaceSchema,
+  resendSchema,
 } from "./manual.schemas";
 
 const CODE = "11111111-1111-1111-1111-111111111111";
@@ -48,4 +50,24 @@ test("releaseSchema requires a valid mode + reason", () => {
   for (const mode of ["cancel", "refund", "manual_release"]) {
     assert.equal(releaseSchema.safeParse({ mode, reason: "valid reason" }).success, true);
   }
+});
+
+test("resendSchema defaults the channel to dashboard and rejects unknown channels", () => {
+  assert.equal(resendSchema.parse({}).channel, "dashboard");
+  assert.equal(resendSchema.parse({ channel: "email" }).channel, "email");
+  assert.equal(resendSchema.safeParse({ channel: "carrier-pigeon" }).success, false);
+});
+
+test("assignmentStatusSchema accepts only destructive targets and requires a reason", () => {
+  for (const status of ["cancelled", "refunded", "failed"]) {
+    assert.equal(
+      assignmentStatusSchema.safeParse({ status, reason: "support case" }).success,
+      true,
+    );
+    assert.equal(assignmentStatusSchema.safeParse({ status }).success, false);
+  }
+  assert.equal(
+    assignmentStatusSchema.safeParse({ status: "delivered", reason: "no" }).success,
+    false,
+  );
 });

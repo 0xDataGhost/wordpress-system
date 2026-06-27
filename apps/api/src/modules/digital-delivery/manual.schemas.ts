@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DELIVERY_CHANNELS } from "../../db/schema/digital-deliveries";
 
 /**
  * Validation for the Phase 19 manual fulfillment / replacement / release tools.
@@ -54,3 +55,26 @@ export const assignmentParamsSchema = z.object({
 });
 
 export type AssignmentParams = z.infer<typeof assignmentParamsSchema>;
+
+/**
+ * Body for POST /digital-delivery/assignments/:assignmentId/resend. Re-delivers
+ * the assignment's code through the chosen (default: safe dashboard) channel
+ * without creating a new assignment. No reason required — resend is not destructive.
+ */
+export const resendSchema = z.object({
+  channel: z.enum(DELIVERY_CHANNELS).default("dashboard"),
+});
+
+export type ResendInput = z.infer<typeof resendSchema>;
+
+/**
+ * Body for PATCH /digital-delivery/assignments/:assignmentId/status. Only the
+ * destructive support targets are settable here; a reason is always required.
+ * The code-side effect honors the "delivered codes never return to stock" rule.
+ */
+export const assignmentStatusSchema = z.object({
+  status: z.enum(["cancelled", "refunded", "failed"]),
+  reason: reasonField,
+});
+
+export type AssignmentStatusInput = z.infer<typeof assignmentStatusSchema>;

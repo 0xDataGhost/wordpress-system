@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { resolveOrderStatus } from "@/components/orders/order-status";
+import { OrderDigitalSection } from "@/components/digital-delivery/OrderDigitalSection";
 import {
   getOrder,
   updateOrderNotes,
@@ -46,6 +47,7 @@ export function OrderDetailsPage() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const canEdit = hasPermission("orders.edit");
+  const canViewDigital = hasPermission("digital_delivery.view");
 
   const [order, setOrder] = useState<OrderDetailsDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -279,6 +281,10 @@ export function OrderDetailsPage() {
               />
             </CardContent>
           </Card>
+
+          {canViewDigital ? (
+            <OrderDigitalSection orderId={order.id} orderItems={order.items} />
+          ) : null}
 
           <Card>
             <CardHeader>

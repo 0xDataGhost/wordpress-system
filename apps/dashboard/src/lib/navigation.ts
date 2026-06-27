@@ -12,6 +12,8 @@ import {
   ScrollText,
   KeyRound,
   BarChart3,
+  Send,
+  Truck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -52,6 +54,18 @@ export const navItems: NavItem[] = [
     to: "/digital-inventory",
     icon: KeyRound,
     permission: "digital_inventory.view",
+  },
+  {
+    label: "تسليم الأكواد",
+    to: "/digital-delivery",
+    icon: Send,
+    permission: "digital_delivery.view",
+  },
+  {
+    label: "الموردين",
+    to: "/suppliers",
+    icon: Truck,
+    permission: "digital_suppliers.view",
   },
   {
     label: "تقارير الأكواد",

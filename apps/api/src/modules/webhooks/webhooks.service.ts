@@ -11,6 +11,7 @@ import {
 import { touchLastSync } from "../connections/connections.service";
 import { maybeAssignCodesForOrder } from "../digital-delivery/digital-delivery.service";
 import { maybeDeliverCodesForOrder } from "../digital-delivery/delivery.service";
+import { maybeReleaseCodesForOrder } from "../digital-delivery/manual.service";
 import { upsertCustomersFromWoo } from "../sync/customers.sync";
 import { upsertOrdersFromWoo } from "../sync/orders.sync";
 import { upsertProductsFromWoo } from "../sync/products.sync";
@@ -211,7 +212,7 @@ async function processOrderEvent(
   // is status-gated and fully best-effort (never throws), so it cannot fail the
   // webhook; re-running on every order.updated is idempotent.
   const [orderRow] = await db
-    .select({ id: orders.id })
+    .select({ id: orders.id, status: orders.status })
     .from(orders)
     .where(
       and(
@@ -221,6 +222,11 @@ async function processOrderEvent(
     )
     .limit(1);
   if (orderRow) {
+    // Phase 20.5: a cancelled/refunded order releases its codes safely (delivered
+    // codes are never returned to stock). Best-effort + idempotent; runs first so
+    // a terminal order does not also trigger assignment/delivery (both are
+    // status-gated and would no-op anyway).
+    await maybeReleaseCodesForOrder(storeId, orderRow.id, orderRow.status);
     await maybeAssignCodesForOrder(storeId, orderRow.id);
     // Phase 18: auto-deliver eligible orders right after assignment. Best-effort
     // (status-gated on deliver_on_statuses + auto_delivery_enabled); never fails

@@ -12,6 +12,7 @@ import {
   importHandler,
   listBatchesHandler,
   listCodesHandler,
+  markInvalidHandler,
   revealHandler,
   updateStatusHandler,
 } from "./digital-inventory.controller";
@@ -21,6 +22,7 @@ import {
   importCodesSchema,
   listBatchesQuerySchema,
   listCodesQuerySchema,
+  markInvalidSchema,
   summaryQuerySchema,
   updateCodeStatusSchema,
 } from "./digital-inventory.schemas";
@@ -97,6 +99,15 @@ router.patch(
   requirePermission("digital_inventory.edit"),
   validate({ params: codeParamsSchema, body: updateCodeStatusSchema }),
   asyncHandler(updateStatusHandler),
+);
+
+// POST /digital-inventory/codes/:id/mark-invalid — audited "supplier said it's bad" shortcut
+router.post(
+  "/codes/:id/mark-invalid",
+  authenticate,
+  requirePermission("digital_inventory.edit"),
+  validate({ params: codeParamsSchema, body: markInvalidSchema }),
+  asyncHandler(markInvalidHandler),
 );
 
 // GET /digital-inventory/batches

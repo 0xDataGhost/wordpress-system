@@ -984,15 +984,17 @@ Recommended routes:
 
 # 8. Implementation Phase Status
 
+> Status audited 2026-06-27 against the actual codebase (API typecheck/lint clean, 288 unit tests passing; dashboard build/lint clean). See [docs/status.md](docs/status.md) for the detailed per-phase audit. Legend: ✅ COMPLETED · 🟡 PARTIAL (backend done, frontend/secondary gaps) · ⏳ PENDING.
+
 | Phase | Name | Status |
 |---|---|---|
-| 15 | Digital Product Foundation | ⏳ PENDING |
-| 16 | Code Inventory & Secure Import | ⏳ PENDING |
-| 17 | Code Assignment & Reservation Engine | ⏳ PENDING |
-| 18 | Automatic Digital Delivery | ⏳ PENDING |
-| 19 | Manual Fulfillment, Resend & Replacement | ⏳ PENDING |
-| 20 | Suppliers & Batch Cost Tracking | ⏳ PENDING |
-| 21 | Digital Reports & Profit Analytics | ⏳ PENDING |
+| 15 | Digital Product Foundation | ✅ COMPLETED |
+| 16 | Code Inventory & Secure Import | ✅ COMPLETED |
+| 17 | Code Assignment & Reservation Engine | 🟡 PARTIAL — backend complete; frontend (queue + order section) missing |
+| 18 | Automatic Digital Delivery | 🟡 PARTIAL — backend complete; frontend missing; `/resend` named `/retry` |
+| 19 | Manual Fulfillment, Resend & Replacement | 🟡 PARTIAL — backend partial; frontend missing; some endpoints/audits/webhook gaps |
+| 20 | Suppliers & Batch Cost Tracking | 🟡 PARTIAL — backend complete; suppliers UI + behavioral tests missing |
+| 21 | Digital Reports & Profit Analytics | 🟡 PARTIAL — backend + frontend + tests present (already started ahead of audit) |
 | 22 | Customer Self-Service Code Access | ⏳ PENDING |
 | 23 | Digital Automations Expansion | ⏳ PENDING |
 | 24 | Digital QA, Security Audit & Pilot Readiness | ⏳ PENDING |

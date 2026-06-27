@@ -96,6 +96,18 @@ export const updateCodeStatusSchema = z.object({
 export type UpdateCodeStatusInput = z.infer<typeof updateCodeStatusSchema>;
 
 /**
+ * Body for POST /digital-inventory/codes/:id/mark-invalid (plan2 §19). A
+ * dedicated, audited shortcut for the common support case "supplier says this
+ * code is bad". A reason is always required; the transition rules above still
+ * apply (a delivered code must go through replacement instead).
+ */
+export const markInvalidSchema = z.object({
+  reason: z.string().trim().min(3, "A reason is required").max(500),
+});
+
+export type MarkInvalidInput = z.infer<typeof markInvalidSchema>;
+
+/**
  * Allowed manual status transitions (plan2 §16). The key is the current status;
  * the value lists the statuses an operator may move it to. Anything not listed
  * is rejected — in particular nothing transitions to `refunded` here, and

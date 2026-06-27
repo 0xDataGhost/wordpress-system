@@ -150,3 +150,54 @@ export function orderStatusForRelease(mode: ReleaseMode): string {
   if (mode === "cancel") return "cancelled";
   return "manual_review";
 }
+
+/* ----------------------- Manual assignment-status change ----------------------- */
+
+/** The statuses an operator may set directly on an assignment (plan2 §19). */
+export type AssignmentStatusTarget = "cancelled" | "refunded" | "failed";
+
+export interface AssignmentStatusOutcome {
+  /** What to do with this assignment's code. */
+  codeAction: "release_to_available" | "lock_refunded" | "none";
+  /** New code status, or null to leave it unchanged. */
+  newCodeStatus: string | null;
+  /** New assignment status (always the chosen target). */
+  newAssignmentStatus: AssignmentStatusTarget;
+}
+
+/**
+ * Decides the code-side effect of a manual assignment-status change
+ * (PATCH /assignments/:id/status, plan2 §19). The same golden rule as
+ * `decideReleaseOutcome` applies:
+ *
+ *  - `failed`: a delivery-failure marker — the code is left untouched (the order
+ *    may still be retried/redelivered), only the assignment is marked failed.
+ *  - `cancelled` / `refunded` on an UNDELIVERED (assigned) code: safe to return
+ *    the code to stock (`available`).
+ *  - `cancelled` / `refunded` on a DELIVERED code: NEVER returns to stock — the
+ *    code is locked as `refunded`.
+ */
+export function decideAssignmentStatusOutcome(
+  currentAssignmentStatus: string,
+  target: AssignmentStatusTarget,
+): AssignmentStatusOutcome {
+  if (target === "failed") {
+    return {
+      codeAction: "none",
+      newCodeStatus: null,
+      newAssignmentStatus: "failed",
+    };
+  }
+  if (currentAssignmentStatus === "delivered") {
+    return {
+      codeAction: "lock_refunded",
+      newCodeStatus: "refunded",
+      newAssignmentStatus: target,
+    };
+  }
+  return {
+    codeAction: "release_to_available",
+    newCodeStatus: "available",
+    newAssignmentStatus: target,
+  };
+}

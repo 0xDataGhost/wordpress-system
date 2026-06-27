@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   assertCodeTransition,
+  decideAssignmentStatusOutcome,
   decideReleaseOutcome,
   isAssignmentTransitionAllowed,
   isCodeTransitionAllowed,
@@ -75,6 +76,36 @@ test("assignment: active assignments can be replaced; terminal ones cannot", () 
   assert.equal(isAssignmentTransitionAllowed("delivered", "replaced"), true);
   assert.equal(isAssignmentTransitionAllowed("assigned", "cancelled"), true);
   assert.equal(isAssignmentTransitionAllowed("replaced", "assigned"), false);
+});
+
+/* ------------------- Manual assignment-status outcomes ------------------- */
+
+test("assignment-status: an UNDELIVERED assignment returns its code to stock on cancel/refund", () => {
+  for (const target of ["cancelled", "refunded"] as const) {
+    const outcome = decideAssignmentStatusOutcome("assigned", target);
+    assert.equal(outcome.codeAction, "release_to_available");
+    assert.equal(outcome.newCodeStatus, "available");
+    assert.equal(outcome.newAssignmentStatus, target);
+  }
+});
+
+test("assignment-status: a DELIVERED assignment NEVER returns its code to stock", () => {
+  for (const target of ["cancelled", "refunded"] as const) {
+    const outcome = decideAssignmentStatusOutcome("delivered", target);
+    assert.equal(outcome.codeAction, "lock_refunded");
+    assert.equal(outcome.newCodeStatus, "refunded");
+    assert.notEqual(outcome.newCodeStatus, "available");
+    assert.equal(outcome.newAssignmentStatus, target);
+  }
+});
+
+test("assignment-status: 'failed' leaves the code untouched", () => {
+  for (const current of ["assigned", "delivered"]) {
+    const outcome = decideAssignmentStatusOutcome(current, "failed");
+    assert.equal(outcome.codeAction, "none");
+    assert.equal(outcome.newCodeStatus, null);
+    assert.equal(outcome.newAssignmentStatus, "failed");
+  }
 });
 
 /* ----------------------------- Reason policy ----------------------------- */

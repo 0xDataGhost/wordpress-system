@@ -25,6 +25,7 @@ import type {
   ImportCodesInput,
   ListBatchesQuery,
   ListCodesQuery,
+  MarkInvalidInput,
   SummaryQuery,
   UpdateCodeStatusInput,
 } from "./digital-inventory.schemas";
@@ -188,6 +189,44 @@ export async function updateStatusHandler(
         batchName: null,
       }),
       "Status updated",
+    ),
+  );
+}
+
+/** POST /digital-inventory/codes/:id/mark-invalid — flag a bad code (digital_inventory.edit). */
+export async function markInvalidHandler(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const { storeId } = getAuth(req);
+  const { id } = req.params as CodeParams;
+  const input = req.body as MarkInvalidInput;
+  const result = await updateCodeStatus(storeId, id, {
+    status: "invalid",
+    reason: input.reason,
+  });
+
+  // Audit: ids + status only — never the reason text or any code.
+  await recordAuditFromRequest(req, {
+    action: AUDIT_ACTIONS.DIGITAL_CODE_MARKED_INVALID,
+    entityType: AUDIT_ENTITY_TYPES.DIGITAL_CODE,
+    entityId: result.code.id,
+    message: "علّم كوداً رقمياً كغير صالح",
+    metadata: {
+      productId: result.code.productId,
+      fromStatus: result.fromStatus,
+      toStatus: result.toStatus,
+    },
+  });
+
+  res.status(200).json(
+    successResponse(
+      toCodeDetailsDto({
+        code: result.code,
+        productName: null,
+        batchName: null,
+      }),
+      "Code marked invalid",
     ),
   );
 }

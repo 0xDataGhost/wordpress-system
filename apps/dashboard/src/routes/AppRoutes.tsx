@@ -113,6 +113,26 @@ const DigitalReportsPage = lazy(() =>
     default: m.DigitalReportsPage,
   })),
 );
+const DigitalDeliveryQueuePage = lazy(() =>
+  import("@/pages/digital-delivery/DigitalDeliveryQueuePage").then((m) => ({
+    default: m.DigitalDeliveryQueuePage,
+  })),
+);
+const DigitalDeliveryOrderPage = lazy(() =>
+  import("@/pages/digital-delivery/DigitalDeliveryOrderPage").then((m) => ({
+    default: m.DigitalDeliveryOrderPage,
+  })),
+);
+const SuppliersListPage = lazy(() =>
+  import("@/pages/suppliers/SuppliersListPage").then((m) => ({
+    default: m.SuppliersListPage,
+  })),
+);
+const SupplierDetailsPage = lazy(() =>
+  import("@/pages/suppliers/SupplierDetailsPage").then((m) => ({
+    default: m.SupplierDetailsPage,
+  })),
+);
 const TeamPage = lazy(() =>
   import("@/pages/team/TeamPage").then((m) => ({
     default: m.TeamPage,
@@ -165,6 +185,16 @@ export function AppRoutes() {
               path="/digital-inventory/batches"
               element={<DigitalBatchesPage />}
             />
+            <Route
+              path="/digital-delivery"
+              element={<DigitalDeliveryQueuePage />}
+            />
+            <Route
+              path="/digital-delivery/orders/:orderId"
+              element={<DigitalDeliveryOrderPage />}
+            />
+            <Route path="/suppliers" element={<SuppliersListPage />} />
+            <Route path="/suppliers/:id" element={<SupplierDetailsPage />} />
             <Route path="/digital-reports" element={<DigitalReportsPage />} />
           </Route>
         </Route>

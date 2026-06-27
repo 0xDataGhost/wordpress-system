@@ -30,12 +30,16 @@ import {
   manualAssignHandler,
   releaseHandler,
   replaceHandler,
+  resendHandler,
+  updateAssignmentStatusHandler,
 } from "./manual.controller";
 import {
   assignmentParamsSchema,
+  assignmentStatusSchema,
   manualAssignSchema,
   releaseSchema,
   replaceSchema,
+  resendSchema,
 } from "./manual.schemas";
 
 /**
@@ -137,16 +141,37 @@ router.post(
 router.post(
   "/assignments/:assignmentId/replace",
   authenticate,
-  requirePermission("digital_delivery.assign"),
+  requirePermission("digital_delivery.replace"),
   validate({ params: assignmentParamsSchema, body: replaceSchema }),
   asyncHandler(replaceHandler),
 );
 
-// POST /digital-delivery/orders/:orderId/release — cancel/refund/manual release
+// POST /digital-delivery/assignments/:assignmentId/resend — resend the same code
+router.post(
+  "/assignments/:assignmentId/resend",
+  authenticate,
+  requirePermission("digital_delivery.resend"),
+  validate({ params: assignmentParamsSchema, body: resendSchema }),
+  asyncHandler(resendHandler),
+);
+
+// PATCH /digital-delivery/assignments/:assignmentId/status — cancel/refund/fail one assignment
+router.patch(
+  "/assignments/:assignmentId/status",
+  authenticate,
+  requirePermission("digital_delivery.refund"),
+  validate({ params: assignmentParamsSchema, body: assignmentStatusSchema }),
+  asyncHandler(updateAssignmentStatusHandler),
+);
+
+// POST /digital-delivery/orders/:orderId/release — cancel/refund/manual release.
+// Money-sensitive (refund/cancel mark codes refunded), so gated by the same
+// `digital_delivery.refund` permission as the per-assignment status route — not
+// `.retry` — to prevent order-employee/customer-support from issuing refunds.
 router.post(
   "/orders/:orderId/release",
   authenticate,
-  requirePermission("digital_delivery.retry"),
+  requirePermission("digital_delivery.refund"),
   validate({ params: orderParamsSchema, body: releaseSchema }),
   asyncHandler(releaseHandler),
 );

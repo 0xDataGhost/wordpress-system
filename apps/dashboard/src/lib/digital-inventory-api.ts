@@ -236,6 +236,17 @@ export async function updateCodeStatus(
   });
 }
 
+/** Audited "supplier said it's bad" shortcut (digital_inventory.edit). */
+export async function markCodeInvalid(
+  id: string,
+  reason: string,
+): Promise<CodeDetails> {
+  return apiRequest<CodeDetails>(`/digital-inventory/codes/${id}/mark-invalid`, {
+    method: "POST",
+    body: { reason },
+  });
+}
+
 export async function listBatches(
   query: ListBatchesQuery = {},
 ): Promise<BatchListResult> {

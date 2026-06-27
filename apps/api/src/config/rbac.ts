@@ -67,6 +67,18 @@ export const PERMISSIONS = [
     description: "Retry a failed digital code delivery",
   },
   {
+    key: "digital_delivery.resend",
+    description: "Resend an already-assigned digital code to the customer",
+  },
+  {
+    key: "digital_delivery.replace",
+    description: "Replace a delivered/invalid digital code with a new one",
+  },
+  {
+    key: "digital_delivery.refund",
+    description: "Refund or cancel a digital code assignment (money-sensitive)",
+  },
+  {
     key: "digital_suppliers.view",
     description: "View suppliers and their batches/metrics",
   },
@@ -144,6 +156,9 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "digital_delivery.assign",
       "digital_delivery.deliver",
       "digital_delivery.retry",
+      "digital_delivery.resend",
+      "digital_delivery.replace",
+      "digital_delivery.refund",
       "digital_suppliers.view",
       "digital_suppliers.create",
       "digital_suppliers.edit",
@@ -186,6 +201,8 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "digital_delivery.assign",
       "digital_delivery.deliver",
       "digital_delivery.retry",
+      "digital_delivery.resend",
+      "digital_delivery.replace",
     ],
   },
   {
@@ -200,6 +217,8 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       "digital_inventory.view",
       "digital_delivery.view",
       "digital_delivery.retry",
+      "digital_delivery.resend",
+      "digital_delivery.replace",
     ],
   },
   {
